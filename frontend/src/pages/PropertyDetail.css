@@ -1,0 +1,418 @@
+/* Property Detail Styling */
+.property-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header Section */
+.property-header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.property-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.property-address {
+  opacity: 0.9;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.property-badges {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  backdrop-filter: blur(4px);
+}
+
+.badge.hmo {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.badge.type {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+/* Stats Grid */
+.property-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.stat-card h4 {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Content Grid */
+.property-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 968px) {
+  .property-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Section Cards */
+.section-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.section-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.25rem;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tenancy Cards */
+.tenancy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tenancy-card {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid #4f46e5;
+}
+
+.tenancy-card.active {
+  border-left-color: #10b981;
+}
+
+.tenancy-card.void {
+  border-left-color: #9ca3af;
+}
+
+.tenancy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tenancy-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.tenancy-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tenancy-status.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tenancy-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tenancy-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.tenancy-detail-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tenancy-detail-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tenancy-detail-value.amount {
+  color: #10b981;
+}
+
+/* Tenant List */
+.tenant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.tenant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+}
+
+.tenant-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tenant-badge {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.tenant-contact {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Compliance Section */
+.compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.compliance-card {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.compliance-card.valid {
+  border-left: 4px solid #10b981;
+}
+
+.compliance-card.expiring {
+  border-left: 4px solid #f59e0b;
+}
+
+.compliance-card.expired {
+  border-left: 4px solid #ef4444;
+}
+
+.compliance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.compliance-type {
+  font-weight: 600;
+  color: #111827;
+}
+
+.compliance-status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.compliance-status-badge.valid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.compliance-status-badge.expiring {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.compliance-status-badge.expired {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.compliance-dates {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.compliance-dates strong {
+  color: #374151;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+/* Loading */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* Error */
+.error-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.error-container h2 {
+  color: #ef4444;
+}
+
+/* Upcoming Payments */
+.upcoming-payments {
+  margin-top: 8px;
+}
+
+.payment-summary {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.total-label {
+  display: block;
+  color: #065f46;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+}
+
+.total-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #10b981;
+}
+
+.payment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.payment-tenant {
+  font-weight: 600;
+  color: #111827;
+}
+
+.payment-room {
+  font-size: 0.75rem;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.payment-amount {
+  text-align: right;
+}
+
+.payment-amount .amount {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+.payment-amount .due-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Back Link */
+.back-link {
+  display: inline-block;
+  margin-top: 24px;
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}

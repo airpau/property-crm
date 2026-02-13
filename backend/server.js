@@ -47,15 +47,39 @@ app.use('/api/rent-payments', authMiddleware, rentPaymentsRouter);
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  // Check multiple possible paths
+  const possiblePaths = [
+    path.join(__dirname, '../frontend/build'),
+    path.join(__dirname, '../../frontend/build'),
+    '/opt/render/project/src/frontend/build'
+  ];
   
-  // Handle React routing - return index.html for any non-API routes
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-  });
+  let frontendBuildPath = null;
+  for (const p of possiblePaths) {
+    try {
+      if (require('fs').existsSync(p)) {
+        frontendBuildPath = p;
+        break;
+      }
+    } catch (e) {}
+  }
+  
+  if (frontendBuildPath) {
+    console.log('Serving frontend from:', frontendBuildPath);
+    app.use(express.static(frontendBuildPath));
+    
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    });
+  } else {
+    console.log('Frontend build not found in any of:', possiblePaths);
+  }
 }
 
-// 404 handler
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });

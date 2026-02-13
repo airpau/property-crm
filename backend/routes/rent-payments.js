@@ -63,6 +63,63 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// GET summary for current month (for RentTracker component)
+router.get('/summary/current-month', async (req, res) => {
+  try {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 1);
+
+    // Get all payments for current month
+    const { data: payments, error } = await req.supabase
+      .from('rent_payments')
+      .select('amount_due, amount_paid, status')
+      .eq('landlord_id', req.landlord_id)
+      .gte('due_date', startOfMonth.toISOString())
+      .lt('due_date', endOfMonth.toISOString());
+
+    if (error) throw error;
+
+    // Calculate totals
+    let totalReceived = 0;
+    let totalPending = 0;
+    let totalLate = 0;
+    let totalMissed = 0;
+
+    (payments || []).forEach(p => {
+      const dueAmount = parseFloat(p.amount_due || 0);
+      const paidAmount = parseFloat(p.amount_paid || 0);
+      
+      switch (p.status) {
+        case 'paid':
+          totalReceived += paidAmount;
+          break;
+        case 'pending':
+          totalPending += dueAmount;
+          break;
+        case 'late':
+          totalLate += dueAmount - paidAmount;
+          break;
+        case 'missed':
+          totalMissed += dueAmount;
+          break;
+      }
+    });
+
+    res.json({
+      total_received: totalReceived,
+      total_pending: totalPending,
+      total_late: totalLate,
+      total_missed: totalMissed
+    });
+  } catch (err) {
+    console.error('Error fetching summary:', err);
+    res.status(500).json({ error: 'Failed to fetch summary' });
+  }
+});
+
 // GET dashboard stats
 router.get('/dashboard/stats', async (req, res) => {
   try {

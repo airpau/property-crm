@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 require('dotenv').config();
 
 const { authMiddleware } = require('./middleware/auth');
@@ -43,6 +44,16 @@ app.use('/api/properties', authMiddleware, propertiesRouter);
 app.use('/api/tenants', authMiddleware, tenantsRouter);
 app.use('/api/tenancies', authMiddleware, tenanciesRouter);
 app.use('/api/rent-payments', authMiddleware, rentPaymentsRouter);
+
+// Serve static files from frontend build in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  
+  // Handle React routing - return index.html for any non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
+}
 
 // 404 handler
 app.use((req, res) => {

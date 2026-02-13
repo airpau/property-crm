@@ -11,6 +11,9 @@ router.get('/', async (req, res) => {
         tenancy_tenants(
           tenancy:tenancies(
             id,
+            status,
+            rent_amount,
+            rent_due_day,
             property:properties(name, id)
           )
         )

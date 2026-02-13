@@ -17,10 +17,7 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: property-crm-frontend
-          property: url
+        sync: false  # Set manually after frontend deploy: https://property-crm-frontend.onrender.com
 
   # Frontend Service
   - type: web
@@ -30,10 +27,7 @@ services:
     staticPublishPath: frontend/build
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          type: web
-          name: property-crm-api
-          property: url
+        sync: false  # Set manually: https://property-crm-api.onrender.com
     headers:
       - path: /*
         name: Cache-Control

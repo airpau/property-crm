@@ -32,6 +32,10 @@ services:
       - path: /*
         name: Cache-Control
         value: no-cache
+    redirects:
+      - source: /.*
+        destination: /index.html
+        type: rewrite
 
 # Note: This is a blueprint file for Render deployment
 # Use this to create a new Blueprint at:

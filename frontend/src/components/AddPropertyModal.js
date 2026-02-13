@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function AddPropertyModal({ onClose, onPropertyAdded }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -31,7 +33,7 @@ function AddPropertyModal({ onClose, onPropertyAdded }) {
     setError(null);
 
     try {
-      const response = await axios.post('/api/properties', {
+      const response = await axios.post(`${API_URL}/api/properties`, {
         ...formData,
         bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
         bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null

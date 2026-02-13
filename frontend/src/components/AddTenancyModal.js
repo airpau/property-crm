@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function AddTenancyModal({ onClose, onTenancyAdded }) {
   const [properties, setProperties] = useState([]);
   const [tenants, setTenants] = useState([]);
@@ -46,8 +48,8 @@ function AddTenancyModal({ onClose, onTenancyAdded }) {
     try {
       setDataLoading(true);
       const [propertiesRes, tenantsRes] = await Promise.all([
-        axios.get('/api/properties'),
-        axios.get('/api/tenants')
+        axios.get(`${API_URL}/api/properties`),
+        axios.get(`${API_URL}/api/tenants`)
       ]);
       setProperties(propertiesRes.data);
       setTenants(tenantsRes.data);
@@ -88,7 +90,7 @@ function AddTenancyModal({ onClose, onTenancyAdded }) {
 
     try {
       // Create the tenancy
-      const tenancyResponse = await axios.post('/api/tenancies', {
+      const tenancyResponse = await axios.post(`${API_URL}/api/tenancies`, {
         property_id: formData.property_id,
         tenancy_type: formData.tenancy_type,
         start_date: formData.start_date,
@@ -104,7 +106,7 @@ function AddTenancyModal({ onClose, onTenancyAdded }) {
       const tenancyId = tenancyResponse.data.id;
 
       // Create the tenancy_tenants link
-      await axios.post('/api/tenancies/tenancy-tenants', {
+      await axios.post(`${API_URL}/api/tenancies/tenancy-tenants`, {
         tenancy_id: tenancyId,
         tenant_id: formData.tenant_id,
         is_primary: formData.is_primary

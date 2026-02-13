@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function RentTracker() {
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -13,8 +15,8 @@ function RentTracker() {
   const fetchData = async () => {
     try {
       const [paymentsRes, summaryRes] = await Promise.all([
-        axios.get('/api/rent-payments'),
-        axios.get('/api/rent-payments/summary/current-month')
+        axios.get(`${API_URL}/api/rent-payments`),
+        axios.get(`${API_URL}/api/rent-payments/summary/current-month`)
       ]);
       setPayments(paymentsRes.data);
       setSummary(summaryRes.data);
@@ -26,7 +28,7 @@ function RentTracker() {
 
   const recordPayment = async (paymentId, amount) => {
     try {
-      await axios.put(`/api/rent-payments/${paymentId}`, {
+      await axios.put(`${API_URL}/api/rent-payments/${paymentId}`, {
         amount_paid: amount,
         paid_date: new Date().toISOString().split('T')[0],
         status: 'paid'

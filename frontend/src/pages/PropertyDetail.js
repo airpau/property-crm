@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function PropertyDetail() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
@@ -14,7 +16,7 @@ function PropertyDetail() {
 
   const fetchProperty = async () => {
     try {
-      const response = await axios.get(`/api/properties/${id}`);
+      const response = await axios.get(`${API_URL}/api/properties/${id}`);
       setProperty(response.data);
       setLoading(false);
     } catch (err) {

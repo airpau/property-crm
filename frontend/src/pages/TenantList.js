@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function TenantList() {
   const [tenants, setTenants] = useState([]);
   const [filteredTenants, setFilteredTenants] = useState([]);
@@ -28,7 +30,7 @@ function TenantList() {
 
   const fetchTenants = async () => {
     try {
-      const response = await axios.get('/api/tenants');
+      const response = await axios.get(`${API_URL}/api/tenants`);
       setTenants(response.data);
       setFilteredTenants(response.data);
       setLoading(false);

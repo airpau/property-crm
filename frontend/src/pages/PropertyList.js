@@ -92,6 +92,10 @@ function PropertyList() {
                   <div className="stat-label">Tenants</div>
                 </div>
                 <div className="property-stat">
+                  <div className="stat-number">£{property.monthly_income?.toLocaleString() || 0}</div>
+                  <div className="stat-label">Monthly Income</div>
+                </div>
+                <div className="property-stat">
                   <div className="stat-number">
                     {property.expiring_certs || 0}
                   </div>

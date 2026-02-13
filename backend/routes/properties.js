@@ -11,6 +11,7 @@ router.get('/', async (req, res) => {
         tenancies!tenancies_property_id_fkey(
           id,
           status,
+          rent_amount,
           tenancy_tenants(
             tenant:tenants(*)
           )
@@ -22,14 +23,19 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
 
-    // Format response with counts
-    const formattedProperties = properties.map(p => ({
-      ...p,
-      active_tenancies: p.tenancies?.filter(t => t.status === 'active').length || 0,
-      active_tenants: p.tenancies?.reduce((count, t) => {
-        return count + (t.tenancy_tenants?.length || 0);
-      }, 0) || 0
-    }));
+    // Format response with counts and monthly income
+    const formattedProperties = properties.map(p => {
+      const activeTenancies = p.tenancies?.filter(t => t.status === 'active') || [];
+      const monthlyIncome = activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
+      const activeTenants = activeTenancies.reduce((count, t) => count + (t.tenancy_tenants?.length || 0), 0);
+      
+      return {
+        ...p,
+        active_tenancies: activeTenancies.length,
+        active_tenants: activeTenants,
+        monthly_income: monthlyIncome
+      };
+    });
 
     res.json(formattedProperties);
   } catch (err) {

@@ -71,6 +71,15 @@ router.get('/:id', async (req, res) => {
       .eq('status', 'active')
       .is('deleted_at', null);
 
+    // Flatten tenancy_tenants to tenants
+    const formattedTenancies = tenancies?.map(t => ({
+      ...t,
+      tenants: t.tenancy_tenants?.map(tt => ({
+        ...tt.tenant,
+        is_primary: tt.is_primary
+      })) || []
+    })) || [];
+
     // Compliance certificates
     const { data: compliance, error: complianceError } = await req.supabase
       .from('compliance_certificates')
@@ -93,7 +102,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({
       ...property,
-      tenancies: tenancies || [],
+      tenancies: formattedTenancies,
       compliance: compliance || [],
       recent_payments: payments || []
     });

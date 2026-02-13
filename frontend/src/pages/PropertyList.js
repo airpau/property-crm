@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import AddPropertyModal from '../components/AddPropertyModal';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function PropertyList() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ function PropertyList() {
 
   const fetchProperties = async () => {
     try {
-      const response = await axios.get('/api/properties');
+      const response = await axios.get(`${API_URL}/api/properties`);
       setProperties(response.data);
       setLoading(false);
     } catch (err) {

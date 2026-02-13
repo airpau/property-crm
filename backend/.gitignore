@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Keep example
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.DS_Store
+.idea/
+.vscode/

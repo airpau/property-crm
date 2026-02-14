@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DocumentUpload from '../components/DocumentUpload';
 import './PropertyDetail.css';
@@ -8,10 +8,14 @@ const API_URL = process.env.REACT_APP_API_URL || '';
 
 function PropertyDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [upcomingPayments, setUpcomingPayments] = useState([]);
+  const [editingTenant, setEditingTenant] = useState(null);
+  const [editForm, setEditForm] = useState({ email: '', phone: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchProperty();
@@ -75,6 +79,40 @@ function PropertyDetail() {
       setError('Failed to load property details');
       setLoading(false);
     }
+  };
+
+  const handleEditTenant = (tenant, e) => {
+    e.stopPropagation();
+    setEditingTenant(tenant);
+    setEditForm({
+      email: tenant.email || '',
+      phone: tenant.phone || ''
+    });
+  };
+
+  const handleSaveTenant = async () => {
+    if (!editingTenant) return;
+    
+    try {
+      setSaving(true);
+      await axios.put(`${API_URL}/api/tenants/${editingTenant.id}`, {
+        email: editForm.email,
+        phone: editForm.phone
+      });
+      
+      // Refresh property data
+      await fetchProperty();
+      setEditingTenant(null);
+      setSaving(false);
+    } catch (err) {
+      console.error('Error saving tenant:', err);
+      alert('Failed to save changes');
+      setSaving(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setEditingTenant(null);
   };
 
   if (loading) return <div className="loading-spinner">Loading property details...</div>;
@@ -185,23 +223,29 @@ function PropertyDetail() {
                     )}
                   </div>
 
-                  {/* Tenants in this tenancy - Clickable */}
+                  {/* Tenants in this tenancy - Clickable with Edit */}
                   {tenancy.tenants && tenancy.tenants.length > 0 && (
                     <div className="tenant-list">
                       {tenancy.tenants.map(tenant => (
                         <div 
                           key={tenant.id} 
-                          className="tenant-item clickable"
-                          onClick={() => window.location.href = `/tenants?highlight=${tenant.id}`}
+                          className="tenant-item"
                         >
-                          <span className="tenant-name">
-                            {tenant.first_name} {tenant.last_name}
-                            {tenant.is_primary && <span className="tenant-badge">PRIMARY</span>}
-                          </span>
-                          <span className="tenant-contact">
-                            {tenant.phone || tenant.email || 'No contact'}
-                          </span>
-                          <span className="tenant-action">View →</span>
+                          <div className="tenant-info" onClick={() => navigate(`/tenants?highlight=${tenant.id}`)}>
+                            <span className="tenant-name">
+                              {tenant.first_name} {tenant.last_name}
+                              {tenant.is_primary && <span className="tenant-badge">PRIMARY</span>}
+                            </span>
+                            <span className="tenant-contact">
+                              {tenant.phone || tenant.email || 'No contact'}
+                            </span>
+                          </div>
+                          <button 
+                            className="edit-tenant-btn"
+                            onClick={(e) => handleEditTenant(tenant, e)}
+                          >
+                            ✏️ Edit
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -292,6 +336,52 @@ function PropertyDetail() {
       </div>
 
       <Link to="/properties" className="back-link">← Back to Properties</Link>
+
+      {/* Edit Tenant Modal */}
+      {editingTenant && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Edit {editingTenant.first_name} {editingTenant.last_name}</h3>
+            
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                placeholder="tenant@email.com"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Phone</label>
+              <input
+                type="tel"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                placeholder="+44 7..."
+              />
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="btn-primary"
+                onClick={handleSaveTenant}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button 
+                className="btn-secondary"
+                onClick={handleCloseModal}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

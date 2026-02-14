@@ -23,22 +23,53 @@ function PropertyDetail() {
       setProperty(response.data);
       setLoading(false);
       
-      // Calculate upcoming payments from tenancies
-      if (response.data.tenancies) {
-        const payments = response.data.tenancies
-          .filter(t => t.status === 'active')
-          .flatMap(tenancy => {
-            const tenants = tenancy.tenants || [];
-            return tenants.map(tenant => ({
-              tenantName: `${tenant.first_name} ${tenant.last_name}`,
-              amount: tenancy.rent_amount,
-              dueDay: tenancy.rent_due_day || 1,
-              room: tenancy.room_number,
-              tenancyId: tenancy.id
-            }));
-          })
+      // Get actual rent payments for this month (pending or late only)
+      const today = new Date();
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
+      try {
+        const paymentsRes = await axios.get(`${API_URL}/api/rent-payments`, {
+          params: {
+            property_id: id,
+            start_date: startOfMonth.toISOString(),
+            end_date: endOfMonth.toISOString()
+          }
+        });
+        
+        // Filter to pending/late payments only (not paid)
+        const pendingPayments = (paymentsRes.data || [])
+          .filter(p => p.status === 'pending' || p.status === 'late')
+          .map(payment => ({
+            tenantName: payment.tenants?.map(t => `${t.first_name} ${t.last_name}`).join(', ') || 'Unknown',
+            amount: payment.amount_due,
+            dueDay: new Date(payment.due_date).getDate(),
+            room: payment.tenancy?.room_number,
+            tenancyId: payment.tenancy_id,
+            status: payment.status
+          }))
           .sort((a, b) => a.dueDay - b.dueDay);
-        setUpcomingPayments(payments);
+          
+        setUpcomingPayments(pendingPayments);
+      } catch (paymentErr) {
+        console.error('Error fetching payments:', paymentErr);
+        // Fallback to tenancy-based calculation if API fails
+        if (response.data.tenancies) {
+          const payments = response.data.tenancies
+            .filter(t => t.status === 'active')
+            .flatMap(tenancy => {
+              const tenants = tenancy.tenants || [];
+              return tenants.map(tenant => ({
+                tenantName: `${tenant.first_name} ${tenant.last_name}`,
+                amount: tenancy.rent_amount,
+                dueDay: tenancy.rent_due_day || 1,
+                room: tenancy.room_number,
+                tenancyId: tenancy.id
+              }));
+            })
+            .sort((a, b) => a.dueDay - b.dueDay);
+          setUpcomingPayments(payments);
+        }
       }
     } catch (err) {
       setError('Failed to load property details');
@@ -194,20 +225,21 @@ function PropertyDetail() {
             {upcomingPayments.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">💰</div>
-                <p>No upcoming payments</p>
+                <p>No upcoming payments - all rents paid for this month! 🎉</p>
               </div>
             ) : (
               <>
                 <div className="payment-summary">
-                  <span className="total-label">Total Monthly Due:</span>
+                  <span className="total-label">Outstanding This Month:</span>
                   <span className="total-amount">£{totalMonthlyRent.toLocaleString()}</span>
                 </div>
                 <div className="payment-list">
                   {upcomingPayments.map((payment, idx) => (
-                    <div key={idx} className="payment-item">
+                    <div key={idx} className={`payment-item ${payment.status}`}>
                       <div className="payment-info">
                         <span className="payment-tenant">{payment.tenantName}</span>
                         {payment.room && <span className="payment-room">Room {payment.room}</span>}
+                        {payment.status === 'late' && <span className="payment-late">⚠️ LATE</span>}
                       </div>
                       <div className="payment-amount">
                         <span className="amount">£{payment.amount}</span>

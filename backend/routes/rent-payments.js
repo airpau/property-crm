@@ -4,14 +4,15 @@ const router = express.Router();
 // GET all rent payments for authenticated landlord
 router.get('/', async (req, res) => {
   try {
-    const { property_id, status, limit = 100 } = req.query;
+    const { property_id, status, start_date, end_date, limit = 100 } = req.query;
 
     // First, get all payments with property info
     let query = req.supabase
       .from('rent_payments')
       .select(`
         *,
-        property:properties(name, address_line_1)
+        property:properties(name, address_line_1),
+        tenancy:tenancies(room_number)
       `)
       .eq('landlord_id', req.landlord_id)
       .order('due_date', { ascending: false })
@@ -23,6 +24,14 @@ router.get('/', async (req, res) => {
 
     if (status) {
       query = query.eq('status', status);
+    }
+
+    if (start_date) {
+      query = query.gte('due_date', start_date);
+    }
+
+    if (end_date) {
+      query = query.lte('due_date', end_date);
     }
 
     const { data: payments, error } = await query;

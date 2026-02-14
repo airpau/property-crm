@@ -11,7 +11,10 @@ router.get('/', async (req, res) => {
       .select(`
         *,
         property:properties(name, address_line_1),
-        tenancy:tenancies(rent_amount, room_number)
+        tenancy:tenancies(rent_amount, room_number, tenancy_tenants(
+          is_primary,
+          tenant:tenants(first_name, last_name)
+        ))
       `)
       .eq('landlord_id', req.landlord_id)
       .order('due_date', { ascending: false })
@@ -29,7 +32,19 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
 
-    res.json(payments || []);
+    // Format the response to include tenant names
+    const formattedPayments = (payments || []).map(payment => {
+      const tenancy = payment.tenancy || {};
+      const tenantConnections = tenancy.tenancy_tenants || [];
+      const tenants = tenantConnections.map(tt => tt.tenant).filter(t => t);
+      
+      return {
+        ...payment,
+        tenants: tenants
+      };
+    });
+
+    res.json(formattedPayments || []);
   } catch (err) {
     console.error('Error fetching payments:', err);
     res.status(500).json({ error: 'Failed to fetch payments' });

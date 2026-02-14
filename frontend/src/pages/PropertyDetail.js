@@ -112,8 +112,9 @@ function PropertyDetail() {
                   <div className="tenancy-header">
                     <span className="tenancy-title">
                       {tenancy.tenants?.length > 0 
-                        ? tenancy.tenants.map(t => `${t.first_name} ${t.last_name}`).join(', ')
-                        : (tenancy.tenancy_type?.toUpperCase() + (tenancy.room_number ? ` - Room ${tenancy.room_number}` : ''))
+                        ? tenancy.tenants.map(t => `${t.first_name} ${t.last_name}`).join(', ') + 
+                          (tenancy.room_number ? ` - Room ${tenancy.room_number}` : '')
+                        : (tenancy.room_number ? `Room ${tenancy.room_number}` : 'Unassigned')
                       }
                     </span>
                     <span className={`tenancy-status ${tenancy.status}`}>

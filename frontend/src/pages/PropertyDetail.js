@@ -77,19 +77,21 @@ function PropertyDetail() {
 
       {/* Stats Grid */}
       <div className="property-stats-grid">
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
           <h4>Monthly Rental Income</h4>
           <div className="stat-value">£{totalMonthlyRent.toLocaleString()}</div>
+          <span className="card-action">View in Rent Tracker →</span>
         </div>
         <div className="stat-card">
           <h4>Active Tenancies</h4>
           <div className="stat-value">{property.tenancies?.length || 0}</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => window.location.href = '/tenants'}>
           <h4>Total Tenants</h4>
           <div className="stat-value">
             {property.tenancies?.reduce((sum, t) => sum + (t.tenants?.length || 0), 0) || 0}
           </div>
+          <span className="card-action">View All Tenants →</span>
         </div>
       </div>
 

@@ -64,6 +64,31 @@
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #4f46e5;
+}
+
+.stat-card.clickable:active {
+  transform: scale(0.98);
+}
+
+.card-action {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #4f46e5;
+  font-weight: 500;
 }
 
 .stat-card h4 {
@@ -203,6 +228,26 @@
   padding: 8px 12px;
   background: white;
   border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tenant-item:hover {
+  background: #f3f4f6;
+}
+
+.tenant-item:active {
+  background: #e5e7eb;
+  transform: scale(0.98);
+}
+
+.tenant-item.clickable .tenant-action {
+  color: #4f46e5;
+  font-weight: 500;
 }
 
 .tenant-name {

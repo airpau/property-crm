@@ -13,6 +13,10 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleNavClick = (path) => {
+    navigate(path);
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-brand">
@@ -23,14 +27,33 @@ const Navbar = () => {
       </div>
 
       <nav className="navbar-nav">
-        <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Properties
+        <NavLink 
+          to="/" 
+          end 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          onTouchStart={(e) => e.currentTarget.classList.add('touch-active')}
+          onTouchEnd={(e) => e.currentTarget.classList.remove('touch-active')}
+        >
+          <span className="nav-icon">🏠</span>
+          <span className="nav-label">Properties</span>
         </NavLink>
-        <NavLink to="/tenants" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Tenants
+        <NavLink 
+          to="/tenants" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          onTouchStart={(e) => e.currentTarget.classList.add('touch-active')}
+          onTouchEnd={(e) => e.currentTarget.classList.remove('touch-active')}
+        >
+          <span className="nav-icon">👥</span>
+          <span className="nav-label">Tenants</span>
         </NavLink>
-        <NavLink to="/rent-tracker" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Rent Tracker
+        <NavLink 
+          to="/rent-tracker" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          onTouchStart={(e) => e.currentTarget.classList.add('touch-active')}
+          onTouchEnd={(e) => e.currentTarget.classList.remove('touch-active')}
+        >
+          <span className="nav-icon">💰</span>
+          <span className="nav-label">Rent</span>
         </NavLink>
       </nav>
 

@@ -111,7 +111,10 @@ function PropertyDetail() {
                 <div key={tenancy.id} className={`tenancy-card ${tenancy.status}`}>
                   <div className="tenancy-header">
                     <span className="tenancy-title">
-                      {tenancy.tenancy_type?.toUpperCase()} - {tenancy.room_number ? `Room ${tenancy.room_number}` : 'Entire Property'}
+                      {tenancy.tenants?.length > 0 
+                        ? tenancy.tenants.map(t => `${t.first_name} ${t.last_name}`).join(', ')
+                        : (tenancy.tenancy_type?.toUpperCase() + (tenancy.room_number ? ` - Room ${tenancy.room_number}` : ''))
+                      }
                     </span>
                     <span className={`tenancy-status ${tenancy.status}`}>
                       {tenancy.status?.toUpperCase()}

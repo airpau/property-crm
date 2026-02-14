@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import DocumentUpload from '../components/DocumentUpload';
 import './PropertyDetail.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -147,11 +148,15 @@ function PropertyDetail() {
                     )}
                   </div>
 
-                  {/* Tenants in this tenancy */}
+                  {/* Tenants in this tenancy - Clickable */}
                   {tenancy.tenants && tenancy.tenants.length > 0 && (
                     <div className="tenant-list">
                       {tenancy.tenants.map(tenant => (
-                        <div key={tenant.id} className="tenant-item">
+                        <div 
+                          key={tenant.id} 
+                          className="tenant-item clickable"
+                          onClick={() => window.location.href = `/tenants?highlight=${tenant.id}`}
+                        >
                           <span className="tenant-name">
                             {tenant.first_name} {tenant.last_name}
                             {tenant.is_primary && <span className="tenant-badge">PRIMARY</span>}
@@ -159,10 +164,17 @@ function PropertyDetail() {
                           <span className="tenant-contact">
                             {tenant.phone || tenant.email || 'No contact'}
                           </span>
+                          <span className="tenant-action">View →</span>
                         </div>
                       ))}
                     </div>
                   )}
+
+                  {/* Document Upload for this tenancy */}
+                  <DocumentUpload 
+                    tenancyId={tenancy.id}
+                    onUploadComplete={() => console.log('Document uploaded')}
+                  />
                 </div>
               ))
             )}

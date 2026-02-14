@@ -1,0 +1,254 @@
+/* Document Upload Styling */
+.document-upload {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-top: 24px;
+}
+
+.upload-header {
+  margin-bottom: 20px;
+}
+
+.upload-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  color: #111827;
+}
+
+.upload-description {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* Document Type Selector */
+.document-type-selector {
+  margin-bottom: 20px;
+}
+
+.document-type-selector label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.type-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.type-select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Drop Zone */
+.drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f9fafb;
+}
+
+.drop-zone:hover {
+  border-color: #4f46e5;
+  background: #f3f4f6;
+}
+
+.drop-zone.drag-over {
+  border-color: #4f46e5;
+  background: #ede9fe;
+}
+
+.drop-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.drop-text {
+  color: #374151;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.drop-text strong {
+  color: #4f46e5;
+}
+
+.drop-hint {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Selected Files */
+.selected-files {
+  text-align: left;
+}
+
+.selected-files h4 {
+  margin: 0 0 12px 0;
+  color: #111827;
+  font-size: 1rem;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.file-icon {
+  font-size: 1.5rem;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  color: #111827;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.file-size {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Upload Progress */
+.upload-progress {
+  margin-top: 20px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  text-align: center;
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Upload Actions */
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.upload-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 1rem;
+}
+
+.upload-btn.primary {
+  background: #4f46e5;
+  color: white;
+}
+
+.upload-btn.primary:hover {
+  background: #4338ca;
+}
+
+.upload-btn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.upload-btn.secondary:hover {
+  background: #e5e7eb;
+}
+
+/* Drive Info */
+.drive-info {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.drive-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.drive-icon {
+  font-size: 1.25rem;
+}
+
+.drive-badge span:last-child {
+  color: #374151;
+  font-weight: 500;
+}
+
+.drive-hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .document-upload {
+    padding: 16px;
+  }
+  
+  .drop-zone {
+    padding: 30px 15px;
+  }
+  
+  .upload-actions {
+    flex-direction: column;
+  }
+  
+  .upload-btn {
+    width: 100%;
+  }
+}

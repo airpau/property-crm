@@ -23,7 +23,9 @@ function PropertyDetail() {
 
   const fetchProperty = async () => {
     try {
+      console.log('Fetching property, API_URL:', API_URL);
       const response = await axios.get(`${API_URL}/api/properties/${id}`);
+      console.log('Property loaded:', response.data);
       setProperty(response.data);
       setLoading(false);
       
@@ -95,10 +97,17 @@ function PropertyDetail() {
     
     try {
       setSaving(true);
-      await axios.put(`${API_URL}/api/tenants/${editingTenant.id}`, {
+      console.log('Saving tenant...', editingTenant.id);
+      console.log('API_URL:', API_URL);
+      console.log('Full URL:', `${API_URL}/api/tenants/${editingTenant.id}`);
+      console.log('Data:', { email: editForm.email, phone: editForm.phone });
+      
+      const response = await axios.put(`${API_URL}/api/tenants/${editingTenant.id}`, {
         email: editForm.email,
         phone: editForm.phone
       });
+      
+      console.log('Save response:', response.data);
       
       // Refresh property data
       await fetchProperty();
@@ -106,7 +115,9 @@ function PropertyDetail() {
       setSaving(false);
     } catch (err) {
       console.error('Error saving tenant:', err);
-      alert('Failed to save changes');
+      console.error('Error response:', err.response);
+      console.error('Error message:', err.message);
+      alert('Failed to save changes. Check console for details.');
       setSaving(false);
     }
   };

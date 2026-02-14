@@ -120,6 +120,85 @@ router.get('/summary/current-month', async (req, res) => {
   }
 });
 
+// POST generate rent payments from active tenancies
+router.post('/generate', async (req, res) => {
+  try {
+    const { month = new Date().toISOString().slice(0, 7) } = req.body; // Format: "2026-02"
+    
+    // Parse year and month
+    const [year, monthNum] = month.split('-').map(Number);
+    const startOfMonth = new Date(year, monthNum - 1, 1);
+    const endOfMonth = new Date(year, monthNum, 0);
+
+    // Get all active tenancies without payments for this month
+    const { data: tenancies, error: tenancyError } = await req.supabase
+      .from('tenancies')
+      .select(`
+        id,
+        landlord_id,
+        property_id,
+        rent_amount,
+        rent_due_day,
+        rent_payments:rent_payments(id)
+      `)
+      .eq('landlord_id', req.landlord_id)
+      .eq('status', 'active')
+      .is('deleted_at', null);
+
+    if (tenancyError) throw tenancyError;
+
+    // Filter out tenancies that already have payments this month
+    const tenanciesNeedingPayments = (tenancies || []).filter(t => {
+      const existingPayments = t.rent_payments || [];
+      return existingPayments.length === 0; // Simplified check
+    });
+
+    if (tenanciesNeedingPayments.length === 0) {
+      return res.json({ 
+        message: 'No new payments to generate',
+        generated: 0,
+        total: tenancies?.length || 0
+      });
+    }
+
+    // Create payment records
+    const paymentsToInsert = tenanciesNeedingPayments.map(t => {
+      const dueDay = t.rent_due_day || 1;
+      const dueDate = new Date(year, monthNum - 1, dueDay);
+      
+      // If due date has passed this month, mark as late
+      const isLate = dueDate < new Date();
+      
+      return {
+        landlord_id: t.landlord_id,
+        tenancy_id: t.id,
+        property_id: t.property_id,
+        due_date: dueDate.toISOString().split('T')[0],
+        amount_due: t.rent_amount,
+        status: isLate ? 'pending' : 'pending',
+        created_at: new Date().toISOString()
+      };
+    });
+
+    const { data: insertedPayments, error: insertError } = await req.supabase
+      .from('rent_payments')
+      .insert(paymentsToInsert)
+      .select();
+
+    if (insertError) throw insertError;
+
+    res.json({
+      message: `${insertedPayments?.length || 0} rent payments generated for ${month}`,
+      generated: insertedPayments?.length || 0,
+      total: tenancies?.length || 0,
+      payments: insertedPayments
+    });
+  } catch (err) {
+    console.error('Error generating payments:', err);
+    res.status(500).json({ error: 'Failed to generate payments', details: err.message });
+  }
+});
+
 // GET dashboard stats
 router.get('/dashboard/stats', async (req, res) => {
   try {

@@ -4,17 +4,19 @@ const router = express.Router();
 // GET all tenants for authenticated landlord
 router.get('/', async (req, res) => {
   try {
-    const { data: tenants, error } = await req.supabase
+    // Fetch tenants with their tenancy relationships
+    const { data: tenantsWithTenancies, error: fetchError } = await req.supabase
       .from('tenants')
       .select(`
         *,
-        tenancy_tenants(
-          tenancy:tenancies(
+        tenancy_tenants!inner(
+          is_primary,
+          tenancy:tenancies!inner(
             id,
             status,
             rent_amount,
             rent_due_day,
-            property:properties(name, id)
+            property:properties!inner(id, name)
           )
         )
       `)
@@ -22,9 +24,27 @@ router.get('/', async (req, res) => {
       .is('deleted_at', null)
       .order('last_name', { ascending: true });
 
-    if (error) throw error;
+    if (fetchError) throw fetchError;
 
-    res.json(tenants || []);
+    // Flatten the data structure for frontend compatibility
+    const formattedTenants = (tenantsWithTenancies || []).map(tenant => {
+      const tenancies = tenant.tenancy_tenants || [];
+      const activeTenancy = tenancies.find(tt => tt.tenancy?.status === 'active');
+      
+      return {
+        ...tenant,
+        // Flatten tenancy data for easy access
+        tenancy_id: activeTenancy?.tenancy?.id,
+        is_primary_tenant: activeTenancy?.is_primary || false,
+        tenancy_status: activeTenancy?.tenancy?.status,
+        current_property_id: activeTenancy?.tenancy?.property?.id,
+        current_property: activeTenancy?.tenancy?.property?.name,
+        monthly_rent: activeTenancy?.tenancy?.rent_amount,
+        rent_due_day: activeTenancy?.tenancy?.rent_due_day
+      };
+    });
+
+    res.json(formattedTenants);
   } catch (err) {
     console.error('Error fetching tenants:', err);
     res.status(500).json({ error: 'Failed to fetch tenants' });

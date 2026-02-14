@@ -8,6 +8,8 @@ function RentTracker() {
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [generateMessage, setGenerateMessage] = useState(null);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'paid', 'pending', 'overdue'
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
@@ -86,6 +88,35 @@ function RentTracker() {
     }
   };
 
+  const generatePayments = async () => {
+    try {
+      setGenerating(true);
+      setGenerateMessage(null);
+      
+      const response = await axios.post(`${API_URL}/api/rent-payments/generate`, {
+        month: selectedMonth
+      });
+      
+      setGenerateMessage({
+        type: 'success',
+        text: response.data.message
+      });
+      
+      // Refresh data
+      fetchData();
+    } catch (err) {
+      console.error('Error generating payments:', err);
+      setGenerateMessage({
+        type: 'error',
+        text: err.response?.data?.error || 'Failed to generate payments'
+      });
+    } finally {
+      setGenerating(false);
+      // Clear message after 5 seconds
+      setTimeout(() => setGenerateMessage(null), 5000);
+    }
+  };
+
   const getFilteredPayments = () => {
     switch (viewMode) {
       case 'paid':
@@ -140,7 +171,23 @@ function RentTracker() {
             className="month-input"
           />
         </div>
+
+        {/* Generate Payments Button */}
+        <button 
+          className="generate-payments-btn"
+          onClick={generatePayments}
+          disabled={generating}
+        >
+          {generating ? '⏳ Generating...' : '⚡ Generate Payments'}
+        </button>
       </div>
+
+      {/* Generate Message */}
+      {generateMessage && (
+        <div className={`generate-message ${generateMessage.type}`}>
+          {generateMessage.text}
+        </div>
+      )}
 
       {/* Summary Stats */}
       {summary && (

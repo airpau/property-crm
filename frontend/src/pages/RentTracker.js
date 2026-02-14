@@ -149,35 +149,35 @@ function RentTracker() {
             <div className="summary-icon">💰</div>
             <div className="summary-info">
               <label>Total Due</label>
-              <value>£{summary.total_due.toLocaleString()}</value>
+              <span className="stat-value">£{summary.total_due.toLocaleString()}</span>
             </div>
           </div>
           <div className="summary-card received">
             <div className="summary-icon">✅</div>
             <div className="summary-info">
               <label>Received</label>
-              <value>£{summary.total_received.toLocaleString()}</value>
+              <span className="stat-value">£{summary.total_received.toLocaleString()}</span>
             </div>
           </div>
           <div className="summary-card pending">
             <div className="summary-icon">⏳</div>
             <div className="summary-info">
               <label>Pending</label>
-              <value>£{summary.total_pending.toLocaleString()}</value>
+              <span className="stat-value">£{summary.total_pending.toLocaleString()}</span>
             </div>
           </div>
           <div className="summary-card late">
             <div className="summary-icon">⚠️</div>
             <div className="summary-info">
               <label>Late/Missed</label>
-              <value>£{(summary.total_late + summary.total_missed).toLocaleString()}</value>
+              <span className="stat-value">£{(summary.total_late + summary.total_missed).toLocaleString()}</span>
             </div>
           </div>
           <div className="summary-card collection">
             <div className="summary-icon">📊</div>
             <div className="summary-info">
               <label>Collection Rate</label>
-              <value>{summary.total_due > 0 ? Math.round((summary.total_received / summary.total_due) * 100) : 0}%</value>
+              <span className="stat-value">{summary.total_due > 0 ? Math.round((summary.total_received / summary.total_due) * 100) : 0}%</span>
             </div>
           </div>
         </div>

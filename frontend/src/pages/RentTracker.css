@@ -109,7 +109,7 @@
   margin-bottom: 4px;
 }
 
-.summary-info value {
+.summary-info .stat-value {
   display: block;
   font-size: 1.5rem;
   font-weight: 700;
@@ -124,6 +124,8 @@
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: 16px;
   flex-wrap: wrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .filter-tabs button {

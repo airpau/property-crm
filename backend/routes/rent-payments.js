@@ -6,15 +6,12 @@ router.get('/', async (req, res) => {
   try {
     const { property_id, status, limit = 100 } = req.query;
 
+    // First, get all payments with property info
     let query = req.supabase
       .from('rent_payments')
       .select(`
         *,
-        property:properties(name, address_line_1),
-        tenancy:tenancies(rent_amount, room_number, tenancy_tenants(
-          is_primary,
-          tenant:tenants(first_name, last_name)
-        ))
+        property:properties(name, address_line_1)
       `)
       .eq('landlord_id', req.landlord_id)
       .order('due_date', { ascending: false })
@@ -32,17 +29,36 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
 
-    // Format the response to include tenant names
-    const formattedPayments = (payments || []).map(payment => {
-      const tenancy = payment.tenancy || {};
-      const tenantConnections = tenancy.tenancy_tenants || [];
-      const tenants = tenantConnections.map(tt => tt.tenant).filter(t => t);
+    // Get unique tenancy IDs from payments
+    const tenancyIds = [...new Set((payments || []).map(p => p.tenancy_id).filter(Boolean))];
+    
+    // Fetch tenants for those tenancies
+    let tenantsMap = {};
+    if (tenancyIds.length > 0) {
+      const { data: tenancyTenants } = await req.supabase
+        .from('tenancy_tenants')
+        .select(`
+          tenancy_id,
+          tenant:tenants(first_name, last_name)
+        `)
+        .in('tenancy_id', tenancyIds);
       
-      return {
-        ...payment,
-        tenants: tenants
-      };
-    });
+      // Build a map of tenancy_id -> tenants
+      (tenancyTenants || []).forEach(tt => {
+        if (!tenantsMap[tt.tenancy_id]) {
+          tenantsMap[tt.tenancy_id] = [];
+        }
+        if (tt.tenant) {
+          tenantsMap[tt.tenancy_id].push(tt.tenant);
+        }
+      });
+    }
+
+    // Merge tenants into payments
+    const formattedPayments = (payments || []).map(payment => ({
+      ...payment,
+      tenants: tenantsMap[payment.tenancy_id] || []
+    }));
 
     res.json(formattedPayments || []);
   } catch (err) {

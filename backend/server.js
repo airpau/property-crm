@@ -11,7 +11,7 @@ const tenantsRouter = require('./routes/tenants');
 const tenanciesRouter = require('./routes/tenancies');
 const rentPaymentsRouter = require('./routes/rent-payments');
 const driveDocumentsRouter = require('./routes/drive-documents');
-const { router: googleAuthRouter } = require('./routes/google-auth');
+const googleAuthRouter = require('./routes/google-auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

@@ -10,35 +10,63 @@ const supabase = createClient(
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://property-crm-live.onrender.com/auth/callback';
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://property-crm-live.onrender.com/api/google/callback';
 
-// Generate Google OAuth URL
-router.get('/auth/url', async (req, res) => {
+// Generate Google OAuth URL - returns URL for frontend to redirect to
+router.get('/auth-url', async (req, res) => {
   try {
     const state = Buffer.from(JSON.stringify({ 
       userId: req.user?.id 
     })).toString('base64');
 
-    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-    authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/drive.file email');
-    authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('access_type', 'offline');
-    authUrl.searchParams.set('prompt', 'consent');
+    const params = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: REDIRECT_URI,
+      response_type: 'code',
+      scope: 'https://www.googleapis.com/auth/drive.file email',
+      state: state,
+      access_type: 'offline',
+      prompt: 'consent'
+    });
 
-    res.json({ authUrl: authUrl.toString() });
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    res.json({ authUrl });
   } catch (error) {
     console.error('Error generating auth URL:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Handle OAuth callback
-router.post('/auth/callback', async (req, res) => {
+// Check if user has connected Google Drive
+router.get('/status', async (req, res) => {
   try {
-    const { code, state } = req.body;
+    const userId = req.user?.id;
+    
+    const { data: tokenData, error } = await supabase
+      .from('google_drive_tokens')
+      .select('drive_email, created_at')
+      .eq('landlord_id', userId)
+      .single();
+
+    if (error || !tokenData) {
+      return res.json({ connected: false });
+    }
+
+    res.json({ 
+      connected: true, 
+      email: tokenData.drive_email 
+    });
+  } catch (error) {
+    console.error('Error checking Drive status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Handle OAuth callback (called by frontend after Google redirect)
+router.post('/connect', async (req, res) => {
+  try {
+    const { code } = req.body;
+    const userId = req.user?.id;
     
     if (!code) {
       return res.status(400).json({ error: 'No authorization code provided' });
@@ -63,21 +91,18 @@ router.post('/auth/callback', async (req, res) => {
       throw new Error(tokenData.error_description || tokenData.error);
     }
 
-    // Get user info
+    // Get user email
     const userInfoResponse = await fetch(
-      `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenData.access_token}`
+      'https://www.googleapis.com/oauth2/v2/userinfo',
+      { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
     );
     const userInfo = await userInfoResponse.json();
 
-    // Save tokens (user ID from state or auth middleware)
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
+    // Calculate expiry
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
 
+    // Save tokens
     await supabase
       .from('google_drive_tokens')
       .upsert({
@@ -90,71 +115,36 @@ router.post('/auth/callback', async (req, res) => {
 
     res.json({ 
       success: true, 
-      email: userInfo.email,
-      message: 'Google Drive connected successfully'
+      email: userInfo.email 
     });
   } catch (error) {
-    console.error('Error in OAuth callback:', error);
+    console.error('Error in connect:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Refresh access token
-async function refreshAccessToken(userId) {
+// Disconnect Google Drive
+router.delete('/disconnect', async (req, res) => {
   try {
-    const { data: tokenData, error } = await supabase
-      .from('google_drive_tokens')
-      .select('*')
-      .eq('landlord_id', userId)
-      .single();
-
-    if (error || !tokenData) {
-      throw new Error('No refresh token found');
-    }
-
-    const response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        refresh_token: tokenData.refresh_token,
-        grant_type: 'refresh_token'
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + data.expires_in);
-
+    const userId = req.user?.id;
+    
     await supabase
       .from('google_drive_tokens')
-      .update({
-        access_token: data.access_token,
-        token_expires_at: expiresAt.toISOString()
-      })
+      .delete()
       .eq('landlord_id', userId);
 
-    return data.access_token;
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error refreshing token:', error);
-    throw error;
+    console.error('Error disconnecting:', error);
+    res.status(500).json({ error: error.message });
   }
-}
+});
 
-// Get valid access token (refresh if needed)
+// Get access token (with auto-refresh)
 router.get('/token', async (req, res) => {
   try {
     const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
+    
     const { data: tokenData, error } = await supabase
       .from('google_drive_tokens')
       .select('*')
@@ -162,24 +152,50 @@ router.get('/token', async (req, res) => {
       .single();
 
     if (error || !tokenData) {
-      return res.status(404).json({ error: 'No Google Drive connection found' });
+      return res.status(404).json({ error: 'Not connected' });
     }
 
-    // Check if token expired
+    // Check if expired
     const expiresAt = new Date(tokenData.token_expires_at);
     if (expiresAt < new Date()) {
-      const newToken = await refreshAccessToken(userId);
-      return res.json({ 
-        access_token: newToken, 
-        email: tokenData.drive_email,
-        expires_at: new Date(Date.now() + 3600 * 1000).toISOString()
+      // Refresh token
+      const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          refresh_token: tokenData.refresh_token,
+          grant_type: 'refresh_token'
+        })
+      });
+
+      const refreshData = await refreshResponse.json();
+      
+      if (refreshData.error) {
+        return res.status(401).json({ error: 'Token expired, please reconnect' });
+      }
+
+      const newExpiresAt = new Date();
+      newExpiresAt.setSeconds(newExpiresAt.getSeconds() + refreshData.expires_in);
+
+      await supabase
+        .from('google_drive_tokens')
+        .update({
+          access_token: refreshData.access_token,
+          token_expires_at: newExpiresAt.toISOString()
+        })
+        .eq('landlord_id', userId);
+
+      return res.json({
+        access_token: refreshData.access_token,
+        email: tokenData.drive_email
       });
     }
 
     res.json({
       access_token: tokenData.access_token,
-      email: tokenData.drive_email,
-      expires_at: tokenData.token_expires_at
+      email: tokenData.drive_email
     });
   } catch (error) {
     console.error('Error getting token:', error);

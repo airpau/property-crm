@@ -162,6 +162,19 @@
   font-weight: 700;
 }
 
+.stat-card.warning {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #f59e0b;
+}
+
+.stat-card.warning h4 {
+  color: #d97706;
+}
+
+.stat-card.warning .stat-value {
+  color: #f59e0b;
+}
+
 .card-hint {
   display: block;
   margin-top: 8px;

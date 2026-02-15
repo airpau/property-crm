@@ -588,8 +588,24 @@ function PropertyDetail() {
     ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)
     ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
   
+  // Calculate PM fees for current month's bookings
+  const monthlyPMFees = property?.property_category === 'sa'
+    ? (saBookings || []).reduce((sum, booking) => {
+        if (booking.status === 'cancelled') return sum;
+        const checkIn = new Date(booking.check_in);
+        if (checkIn >= currentMonthStart && checkIn <= currentMonthEnd) {
+          return sum + (parseFloat(booking.total_pm_deduction) || 0);
+        }
+        return sum;
+      }, 0)
+    : 0;
+  
   // Total income = tenancy income + SA booking revenue for this month
   const totalIncome = tenancyIncome + monthlySARevenue;
+  
+  // Net after expenses and PM fees
+  const totalExpenses = expenseSummary.totalThisMonth || 0;
+  const netIncome = monthlySARevenue - totalExpenses - monthlyPMFees;
 
   return (
     <div className="property-detail-container">
@@ -619,7 +635,7 @@ function PropertyDetail() {
         {property?.property_category === 'sa' ? (
           <>
             <div className="stat-card income">
-              <h4>💰 Monthly SA Revenue</h4>
+              <h4>💰 Gross Revenue</h4>
               <div className="stat-value">£{monthlySARevenue.toLocaleString()}</div>
               <span className="card-hint">{saBookings.filter(b => {
                 if (b.status === 'cancelled') return false;
@@ -627,17 +643,24 @@ function PropertyDetail() {
                 return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
               }).length} bookings this month</span>
             </div>
+            {property.is_managed && monthlyPMFees > 0 && (
+              <div className="stat-card warning">
+                <h4>🏢 PM Fees</h4>
+                <div className="stat-value">−£{monthlyPMFees.toLocaleString()}</div>
+                <span className="card-hint">{property.property_manager_name || 'Property Manager'}</span>
+              </div>
+            )}
             <div className="stat-card expense">
-              <h4>📉 Monthly Expenses</h4>
-              <div className="stat-value">£{expenseSummary.totalThisMonth.toLocaleString()}</div>
+              <h4>📉 Expenses</h4>
+              <div className="stat-value">−£{totalExpenses.toLocaleString()}</div>
               <span className="card-hint">This property</span>
             </div>
-            <div className={`stat-card ${totalIncome - expenseSummary.totalThisMonth >= 0 ? 'profit' : 'loss'}`}>
-              <h4>{totalIncome - expenseSummary.totalThisMonth >= 0 ? '📈 Net Profit' : '📉 Net Loss'}</h4>
+            <div className={`stat-card ${netIncome >= 0 ? 'profit' : 'loss'}`}>
+              <h4>{netIncome >= 0 ? '📈 Your Net' : '📉 Net Loss'}</h4>
               <div className="stat-value">
-                {totalIncome - expenseSummary.totalThisMonth >= 0 ? '+' : '-'}£{Math.abs(totalIncome - expenseSummary.totalThisMonth).toLocaleString()}
+                {netIncome >= 0 ? '+' : '−'}£{Math.abs(netIncome).toLocaleString()}
               </div>
-              <span className="card-hint">Revenue − Expenses</span>
+              <span className="card-hint">Revenue − PM Fees − Expenses</span>
             </div>
           </>
         ) : (

@@ -53,6 +53,7 @@ function PropertyDetail() {
     totalThisMonth: 0,
     byCategory: {}
   });
+  const [expenseForecast, setExpenseForecast] = useState([]);
   
   // Serviced Accommodation state
   const [saBookings, setSaBookings] = useState([]);
@@ -163,6 +164,43 @@ function PropertyDetail() {
         }
       });
       
+      // Calculate 6-month expense forecast
+      const forecast = [];
+      for (let i = 0; i < 6; i++) {
+        const forecastMonth = new Date(today.getFullYear(), today.getMonth() + i, 1);
+        const monthName = forecastMonth.toLocaleString('en-GB', { month: 'short', year: 'numeric' });
+        
+        let recurringTotal = 0;
+        let oneOffTotal = 0;
+        
+        allExpenses.forEach(expense => {
+          const amount = parseFloat(expense.amount) || 0;
+          const expenseDate = new Date(expense.expense_date);
+          
+          if (expense.frequency === 'one-off') {
+            // One-off: only count if in this specific month
+            if (expenseDate.getMonth() === forecastMonth.getMonth() && 
+                expenseDate.getFullYear() === forecastMonth.getFullYear()) {
+              oneOffTotal += amount;
+            }
+          } else {
+            // Recurring: count for every month going forward
+            // (But only if expense date is on or before this month)
+            if (expenseDate <= forecastMonth || i === 0) {
+              recurringTotal += amount;
+            }
+          }
+        });
+        
+        forecast.push({
+          month: monthName,
+          recurring: recurringTotal,
+          oneOff: oneOffTotal,
+          total: recurringTotal + oneOffTotal
+        });
+      }
+      
+      setExpenseForecast(forecast);
       setExpenseSummary(summary);
     } catch (error) {
       console.error('Error fetching expenses:', error);
@@ -1255,7 +1293,7 @@ function PropertyDetail() {
                   </div>
                   <div className="expense-amount">
                     <div className="amount">£{parseFloat(expense.amount).toLocaleString()}</div>
-                    <div className="frequency">{expense.frequency === 'one-off' ? 'One-off' : 'Recurring'}</div>
+                    <div className="frequency">{expense.frequency === 'one-off' ? 'One-off' : expense.frequency}</div>
                     <button
                       className="btn-secondary edit-expense-btn"
                       onClick={() => handleEditExpense(expense)}
@@ -1265,6 +1303,46 @@ function PropertyDetail() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          
+          {/* Expense Forecast */}
+          {expenseForecast.length > 0 && (
+            <div className="expense-forecast" style={{marginTop: '24px', marginTop: '24px'}}>
+              <h4>📅 6-Month Expense Forecast</h4>
+              <p style={{fontSize: '13px', color: '#6b7280', marginBottom: '16px'}}>
+                Recurring expenses repeat monthly · One-off expenses show only in their month
+              </p>
+              <div className="forecast-table" style={{overflowX: 'auto'}}>
+                <table style={{width: '100%', fontSize: '14px', borderCollapse: 'collapse'}}>
+                  <thead>
+                    <tr style={{background: '#f3f4f6'}}>
+                      <th style={{padding: '10px', textAlign: 'left', borderBottom: '2px solid #e5e7eb'}}>Month</th>
+                      <th style={{padding: '10px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>Recurring</th>
+                      <th style={{padding: '10px', textAlign: 'right', borderBottom: '2px solid #e5e7eb'}}>One-off</th>
+                      <th style={{padding: '10px', textAlign: 'right', borderBottom: '2px solid #e5e7eb', fontWeight: 600}}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expenseForecast.map((month, i) => (
+                      <tr key={i} style={{borderBottom: '1px solid #f3f4f6'}}>
+                        <td style={{padding: '10px', fontWeight: i === 0 ? 600 : 400}}>
+                          {month.month} {i === 0 && <span style={{color: '#10b981', fontSize: '12px'}}>(This month)</span>}
+                        </td>
+                        <td style={{padding: '10px', textAlign: 'right', color: '#6b7280'}}>
+                          £{month.recurring.toLocaleString()}
+                        </td>
+                        <td style={{padding: '10px', textAlign: 'right', color: month.oneOff > 0 ? '#dc2626' : '#9ca3af'}}>
+                          {month.oneOff > 0 ? `£${month.oneOff.toLocaleString()}` : '—'}
+                        </td>
+                        <td style={{padding: '10px', textAlign: 'right', fontWeight: 600, color: month.total > 0 ? '#374151' : '#9ca3af'}}>
+                          £{month.total.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

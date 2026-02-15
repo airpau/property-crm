@@ -4,6 +4,68 @@ import './DocumentUpload.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
+// Component that fetches and displays auth URL as clickable link
+function AltConnectButton() {
+  const [authUrl, setAuthUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const fetchUrl = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/google/auth-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAuthUrl(response.data.authUrl);
+    } catch (e) {
+      alert('Failed to get auth URL');
+    }
+    setLoading(false);
+  };
+  
+  if (!authUrl && !loading) {
+    return React.createElement('button', {
+      onClick: fetchUrl,
+      style: {
+        marginTop: '10px',
+        background: '#4285f4',
+        color: 'white',
+        border: 'none',
+        padding: '10px 16px',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        width: '100%'
+      }
+    }, '📱 Get Google Auth Link');
+  }
+  
+  if (loading) {
+    return React.createElement('p', { style: { marginTop: '10px', fontSize: '12px' } }, 'Loading...');
+  }
+  
+  return React.createElement('a', {
+    href: authUrl,
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    style: {
+      display: 'inline-block',
+      marginTop: '10px',
+      background: '#34a853',
+      color: 'white',
+      border: 'none',
+      padding: '10px 16px',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      width: '100%',
+      textAlign: 'center',
+      textDecoration: 'none',
+      boxSizing: 'border-box'
+    }
+  }, '👉 Tap to Authorize Google Drive');
+}
+
 // Load Google Drive Picker API
 const loadGoogleDriveAPI = () => {
   return new Promise((resolve, reject) => {
@@ -315,22 +377,7 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
             <p style={{marginTop: '15px', fontSize: '12px', color: '#666', textAlign: 'center'}}>
               If popup blocked, use this:
             </p>
-            <button 
-              onClick={async () => {
-                try {
-                  const token = localStorage.getItem('token');
-                  const response = await axios.get(`${API_URL}/api/google/auth-url`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
-                  window.open(response.data.authUrl, '_blank');
-                } catch (e) {
-                  alert('Error: ' + e.message);
-                }
-              }}
-              style={{marginTop: '5px', background: '#f0f0f0', border: '1px solid #ccc', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px'}}
-            >
-              Open in New Tab →
-            </button>
+            <AltConnectButton />
           </div>
         </div>
       )}

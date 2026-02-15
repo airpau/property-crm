@@ -35,18 +35,37 @@ router.get('/', async (req, res) => {
     console.log('Found properties:', properties?.length || 0);
 
     // Format response with counts and monthly income
-    const formattedProperties = properties.map(p => {
+    const formattedProperties = await Promise.all(properties.map(async (p) => {
       const activeTenancies = p.tenancies?.filter(t => t.status === 'active') || [];
-      const monthlyIncome = activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
+      let monthlyIncome = activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
       const activeTenants = activeTenancies.reduce((count, t) => count + (t.tenancy_tenants?.length || 0), 0);
       
+      // For SA properties, also include booking revenue for current month
+      if (p.property_category === 'sa') {
+        const today = new Date();
+        const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+        const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
+        
+        const { data: saBookings } = await req.supabase
+          .from('sa_bookings')
+          .select('net_revenue')
+          .eq('property_id', p.id)
+          .eq('landlord_id', req.landlord_id)
+          .gte('check_in', monthStart)
+          .lte('check_in', monthEnd)
+          .not('status', 'eq', 'cancelled');
+        
+        const saRevenue = (saBookings || []).reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
+        monthlyIncome += saRevenue;
+      }
+
       return {
         ...p,
         active_tenancies: activeTenancies.length,
         active_tenants: activeTenants,
         monthly_income: monthlyIncome
       };
-    });
+    }));
 
     res.json(formattedProperties);
   } catch (err) {
@@ -120,8 +139,31 @@ router.get('/:id', async (req, res) => {
       .order('due_date', { ascending: false })
       .limit(12);
 
+    // Calculate monthly income
+    let monthlyIncome = formattedTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
+    
+    // For SA properties, add booking revenue for current month
+    if (property.property_category === 'sa') {
+      const today = new Date();
+      const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
+      
+      const { data: saBookings } = await req.supabase
+        .from('sa_bookings')
+        .select('net_revenue')
+        .eq('property_id', id)
+        .eq('landlord_id', req.landlord_id)
+        .gte('check_in', monthStart)
+        .lte('check_in', monthEnd)
+        .not('status', 'eq', 'cancelled');
+      
+      const saRevenue = (saBookings || []).reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
+      monthlyIncome += saRevenue;
+    }
+
     res.json({
       ...property,
+      monthly_income: monthlyIncome,
       tenancies: formattedTenancies,
       compliance: compliance || [],
       recent_payments: payments || []

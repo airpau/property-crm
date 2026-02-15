@@ -1,0 +1,145 @@
+/* AddSABooking Modal Styles */
+
+.sa-booking-modal {
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.sa-booking-modal .form-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sa-booking-modal .form-section:last-child {
+  border-bottom: none;
+}
+
+.sa-booking-modal .form-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 14px;
+}
+
+/* Platform Selector */
+.platform-selector {
+  margin-bottom: 16px;
+}
+
+.platform-selector label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.platform-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.platform-btn {
+  padding: 10px 8px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.platform-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.platform-btn.selected {
+  background: #eef2ff;
+  font-weight: 600;
+}
+
+/* PM Summary Section */
+.pm-summary {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.pm-summary h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #065f46;
+}
+
+.pm-calc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #d1fae5;
+}
+
+.pm-row:last-child {
+  border-bottom: none;
+}
+
+.pm-row.total {
+  font-weight: 600;
+  color: #dc2626;
+  border-top: 2px solid #d1fae5;
+  border-bottom: 2px solid #d1fae5;
+  margin-top: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.pm-row.net {
+  font-weight: 700;
+  color: #059669;
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.pm-summary .hint {
+  display: block;
+  margin-top: 12px;
+  color: #059669;
+  font-style: italic;
+}
+
+/* Form Groups */
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.form-group.checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4f46e5;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .platform-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .sa-booking-modal .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

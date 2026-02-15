@@ -5,6 +5,7 @@ import DocumentUpload from '../components/DocumentUpload';
 import DriveFolderMapping from '../components/DriveFolderMapping';
 import AddTenancy from '../components/AddTenancy';
 import AddExpense from '../components/AddExpense';
+import AddSABooking from '../components/AddSABooking';
 import './PropertyDetail.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -43,6 +44,19 @@ function PropertyDetail() {
     totalThisMonth: 0,
     byCategory: {}
   });
+  
+  // Serviced Accommodation state
+  const [saBookings, setSaBookings] = useState([]);
+  const [showAddSABooking, setShowAddSABooking] = useState(false);
+  const [saSummary, setSaSummary] = useState({
+    totalBookings: 0,
+    confirmedRevenue: 0,
+    receivedRevenue: 0,
+    pendingRevenue: 0,
+    totalNights: 0,
+    pmDeductions: 0
+  });
+  const [saForecast, setSaForecast] = useState([]);
 
   useEffect(() => {
     fetchProperty();
@@ -50,7 +64,11 @@ function PropertyDetail() {
     checkQuickBooksStatus();
     loadPropertyDocuments();
     fetchExpenses();
-  }, [id]);
+    // Fetch SA bookings if this is a serviced accommodation property
+    if (property?.property_category === 'sa') {
+      fetchSABookings();
+    }
+  }, [id, property?.property_category]);
 
   const checkDriveStatus = async () => {
     try {
@@ -139,6 +157,63 @@ function PropertyDetail() {
       setExpenseSummary(summary);
     } catch (error) {
       console.error('Error fetching expenses:', error);
+    }
+  };
+
+  const fetchSABookings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || property?.property_category !== 'sa') return;
+      
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      // Get all SA bookings for this property
+      const response = await axios.get(
+        `${API_URL}/api/sa-bookings/property/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const bookings = response.data || [];
+      setSaBookings(bookings);
+      
+      // Calculate summary
+      const summary = {
+        totalBookings: bookings.length,
+        confirmedRevenue: 0,
+        receivedRevenue: 0,
+        pendingRevenue: 0,
+        totalNights: 0,
+        pmDeductions: 0
+      };
+      
+      bookings.forEach(booking => {
+        if (booking.status !== 'cancelled') {
+          const netRevenue = parseFloat(booking.net_revenue) || 0;
+          const pmDeduction = parseFloat(booking.total_pm_deduction) || 0;
+          
+          summary.confirmedRevenue += netRevenue;
+          summary.totalNights += parseInt(booking.total_nights) || 0;
+          summary.pmDeductions += pmDeduction;
+          
+          if (booking.payment_status === 'received') {
+            summary.receivedRevenue += netRevenue;
+          } else {
+            summary.pendingRevenue += netRevenue;
+          }
+        }
+      });
+      
+      setSaSummary(summary);
+      
+      // Get monthly forecast
+      const forecastRes = await axios.get(
+        `${API_URL}/api/sa-bookings/property/${id}/forecast?year=${today.getFullYear()}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSaForecast(forecastRes.data || []);
+    } catch (error) {
+      console.error('Error fetching SA bookings:', error);
     }
   };
 
@@ -651,6 +726,141 @@ function PropertyDetail() {
           )}
         </div>
 
+        {/* Serviced Accommodation Bookings Section */}
+        {property?.property_category === 'sa' && (
+          <div className="section-card sa-bookings-section">
+            <div className="section-header">
+              <h3>✈️ Serviced Accommodation Bookings</h3>
+              <button 
+                className="btn-primary add-btn"
+                onClick={() => setShowAddSABooking(true)}
+              >
+                + Add Booking
+              </button>
+            </div>
+            
+            {/* SA Summary Cards */}
+            <div className="sa-summary-cards">
+              <div className="summary-card bookings">
+                <span className="summary-label">Total Bookings</span>
+                <span className="summary-value">{saSummary.totalBookings}</span>
+                <span className="summary-hint">{saSummary.totalNights} nights</span>
+              </div>
+              <div className="summary-card revenue">
+                <span className="summary-label">Confirmed Revenue</span>
+                <span className="summary-value">£{saSummary.confirmedRevenue.toLocaleString()}</span>
+                <span className="summary-hint">{saSummary.receivedRevenue > 0 ? `£${saSummary.receivedRevenue.toLocaleString()} received` : 'Awaiting payouts'}</span>
+              </div>
+              {property?.is_managed && saSummary.pmDeductions > 0 && (
+                <div className="summary-card pm-deductions">
+                  <span className="summary-label">PM Deductions</span>
+                  <span className="summary-value">£{saSummary.pmDeductions.toLocaleString()}</span>
+                  <span className="summary-hint">{property?.property_manager_name || 'Property Manager'}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* SA Forecast */}
+            {saForecast.length > 0 && (
+              <div className="sa-forecast">
+                <h4>Monthly Revenue Forecast {new Date().getFullYear()}</h4>
+                <div className="forecast-grid">
+                  {saForecast.filter(m => m.confirmed > 0).map(month => (
+                    <div key={month.month} className="forecast-month">
+                      <div className="month-name">{month.monthName}</div>
+                      <div className="month-revenue">£{month.confirmed.toFixed(0)}</div>
+                      <div className="month-bookings">{month.bookings} bookings</div>
+                      <div className="month-status" style={{
+                        color: month.received > 0 ? '#059669' : '#f59e0b'
+                      }}>
+                        {month.received > 0 ? '✓ Received' : 'Pending'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* SA Bookings List */}
+            {saBookings.length > 0 ? (
+              <div className="sa-bookings-list">
+                <table className="bookings-table">
+                  <thead>
+                    <tr>
+                      <th>Guest</th>
+                      <th>Dates</th>
+                      <th>Platform</th>
+                      <th>Net Revenue</th>
+                      <th>Status</th>
+                      <th>Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {saBookings
+                      .filter(b => b.status !== 'cancelled')
+                      .sort((a, b) => new Date(b.check_in) - new Date(a.check_in))
+                      .map(booking => (
+                        <tr key={booking.id} className={booking.payment_status === 'received' ? 'received' : 'pending'}>
+                          <td>
+                            <div className="guest-name">{booking.guest_name}</div>
+                            {booking.reservation_id && (
+                              <div className="res-id">{booking.reservation_id}</div>
+                            )}
+                          </td>
+                          <td>
+                            <div className="booking-dates">
+                              {new Date(booking.check_in).toLocaleDateString('en-GB')}
+                              <br/>
+                              <small>→ {new Date(booking.check_out).toLocaleDateString('en-GB')}</small>
+                            </div>
+                            <div className="nights">{booking.total_nights} nights</div>
+                          </td>
+                          <td>
+                            <span className={`platform-tag ${booking.platform}`}>
+                              {booking.platform}
+                            </span>
+                          </td>
+                          <td>£{parseFloat(booking.net_revenue).toFixed(2)}</td>
+                          <td>
+                            <span className={`status-badge ${booking.status}`}>
+                              {booking.status === 'confirmed' ? '✓' : '●'} {booking.status}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="payment-status">
+                              {booking.payment_status === 'received' ? (
+                                <span className="paid">✓ Received</span>
+                              ) : (
+                                <span className="pending">⏳ Pending</span>
+                              )}
+                            </div>
+                            {property?.is_managed && booking.total_pm_deduction > 0 && (
+                              <div className="pm-status">
+                                {booking.pm_payment_status === 'paid' ? (
+                                  <small className="pm-paid">PM Paid</small>
+                                ) : (
+                                  <small className="pm-owed">PM Owed: £{booking.total_pm_deduction}</small>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-state-icon">📅</div>
+                <p>No bookings added yet</p>
+                <button className="btn-primary" onClick={() => setShowAddSABooking(true)}>
+                  Add Your First Booking
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Upcoming Payments Section */}
         <div className="section-card">
           <h3>💰 Upcoming Rent Payments</h3>
@@ -1072,6 +1282,17 @@ function PropertyDetail() {
           onClose={() => setShowAddExpense(false)}
           onSuccess={() => {
             fetchExpenses(); // Refresh expense data
+          }}
+        />
+      )}
+
+      {/* Add SA Booking Modal */}
+      {showAddSABooking && property && (
+        <AddSABooking
+          property={property}
+          onClose={() => setShowAddSABooking(false)}
+          onSuccess={() => {
+            fetchSABookings(); // Refresh SA booking data
           }}
         />
       )}

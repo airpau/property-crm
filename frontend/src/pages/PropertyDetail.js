@@ -215,6 +215,11 @@ function PropertyDetail() {
   if (!property) return <div className="error-container"><h2>Property not found</h2></div>;
 
   const totalMonthlyRent = upcomingPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  
+  // Calculate total rental income from ALL active tenancies
+  const totalIncome = property?.tenancies
+    ?.filter(t => t.status === 'active')
+    ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
 
   return (
     <div className="property-detail-container">
@@ -401,17 +406,27 @@ function PropertyDetail() {
         <div className="section-card">
           <h3>💰 Upcoming Rent Payments</h3>
           <div className="upcoming-payments">
+            {/* Rent Summary - Shows BOTH Total Income & Outstanding */}
+            <div className="rent-summary-cards">
+              <div className="summary-card income">
+                <span className="summary-label">Monthly Income</span>
+                <span className="summary-value">£{totalIncome.toLocaleString()}</span>
+                <span className="summary-hint">Total from {property?.tenancies?.filter(t => t.status === 'active').length || 0} tenancies</span>
+              </div>
+              <div className="summary-card outstanding">
+                <span className="summary-label">Outstanding</span>
+                <span className="summary-value">£{totalMonthlyRent.toLocaleString()}</span>
+                <span className="summary-hint">{upcomingPayments.length} payments due</span>
+              </div>
+            </div>
+
             {upcomingPayments.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">💰</div>
-                <p>No upcoming payments - all rents paid for this month! 🎉</p>
+                <div className="empty-state-icon">✅</div>
+                <p>All rents paid for this month! 🎉</p>
               </div>
             ) : (
               <>
-                <div className="payment-summary">
-                  <span className="total-label">Outstanding This Month:</span>
-                  <span className="total-amount">£{totalMonthlyRent.toLocaleString()}</span>
-                </div>
                 <div className="payment-list">
                   {upcomingPayments.map((payment, idx) => (
                     <div key={idx} className={`payment-item ${payment.status}`}>

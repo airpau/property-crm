@@ -952,41 +952,61 @@
   color: white;
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .documents-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+/* Rental Summary Cards */
+.rent-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 16px 0 24px;
+}
 
-  .document-tabs {
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 16px;
-  }
+.summary-card {
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
-  .tab {
-    white-space: nowrap;
-    padding: 8px 16px;
-  }
+.summary-card.income {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 2px solid #10b981;
+}
 
-  .document-subcategories {
+.summary-card.outstanding {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+}
+
+.summary-card.income .summary-value {
+  color: #059669;
+}
+
+.summary-card.outstanding .summary-value {
+  color: #d97706;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.summary-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .rent-summary-cards {
     grid-template-columns: 1fr;
   }
-
-  .document-item {
-    flex-wrap: wrap;
-  }
-
-  .view-btn {
-    width: 100%;
-    text-align: center;
-    margin-top: 8px;
-  }
-
-  .tenancy-docs-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
 }
+

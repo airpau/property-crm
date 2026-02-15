@@ -34,10 +34,7 @@ function PropertyDetail() {
   const checkDriveStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Checking Drive status, token exists:', !!token);
-      
       if (!token) {
-        console.log('No token - user not logged in');
         setDriveConnected(false);
         return;
       }
@@ -45,11 +42,9 @@ function PropertyDetail() {
       const response = await axios.get(`${API_URL}/api/google/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('Drive status:', response.data);
       setDriveConnected(response.data.connected);
       setDriveEmail(response.data.email);
     } catch (error) {
-      console.error('Drive status check failed:', error.response?.data || error.message);
       setDriveConnected(false);
     }
   };
@@ -172,29 +167,17 @@ function PropertyDetail() {
   const connectGoogleDrive = async () => {
     try {
       const token = localStorage.getItem('token');
-      const tokenPreview = token ? token.substring(0, 10) + '...' : 'NOT FOUND';
-      
-      alert('Token from localStorage: ' + tokenPreview);
-      
       if (!token) {
-        alert('ERROR: No token in localStorage. Please log out and log in again.');
         return;
       }
-      
-      alert('Token found, making API request...');
       
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      alert('API response received: ' + (response.data ? 'yes' : 'no'));
-      
       if (!response.data.authUrl) {
-        alert('No auth URL received from server. Response: ' + JSON.stringify(response.data));
         return;
       }
-      
-      alert('Auth URL length: ' + response.data.authUrl.length);
       
       // Open Google OAuth in popup
       const popup = window.open(
@@ -203,23 +186,36 @@ function PropertyDetail() {
         'width=500,height=600,scrollbars=yes'
       );
 
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-        alert('Popup blocked! Please allow popups for this site and try again.');
-        return;
-      }
+      // Listen for auth code from popup
+      const handleMessage = async (event) => {
+        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          window.removeEventListener('message', handleMessage);
+          
+          // Send code to backend with our token
+          try {
+            await axios.post(`${API_URL}/api/google/connect`, 
+              { code: event.data.code },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            checkDriveStatus();
+          } catch (err) {
+            console.error('Failed to complete auth:', err);
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
 
-      alert('Popup opened successfully!');
-
-      // Poll for popup closure
+      // Also poll for popup closure
       const pollTimer = setInterval(() => {
         if (popup.closed) {
           clearInterval(pollTimer);
+          window.removeEventListener('message', handleMessage);
           checkDriveStatus();
         }
       }, 500);
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
-      alert('API Error: ' + errorMsg);
+      console.error('Drive connect error:', error);
     }
   };
 

@@ -4,13 +4,11 @@ import './DocumentUpload.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
-// Component that fetches and displays auth URL as clickable link
+// Auth link button for fallback
 function DirectAuthLink() {
-  const [authUrl, setAuthUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [authUrl, setAuthUrl] = useState(null);
   
   const fetchUrl = async () => {
-    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
@@ -18,52 +16,23 @@ function DirectAuthLink() {
       });
       setAuthUrl(response.data.authUrl);
     } catch (e) {
-      alert('Failed to get auth URL');
+      console.error('Failed to get auth URL');
     }
-    setLoading(false);
   };
   
-  if (!authUrl && !loading) {
-    return React.createElement('button', {
-      onClick: fetchUrl,
-      style: {
-        marginTop: '10px',
-        background: '#4285f4',
-        color: 'white',
-        border: 'none',
-        padding: '10px 16px',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        width: '100%'
-      }
-    }, '📱 Get Google Auth Link');
+  if (authUrl) {
+    return React.createElement('a', {
+      href: authUrl,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      style: { display: 'inline-block', marginTop: '10px', padding: '10px 20px', background: '#34a853', color: 'white', borderRadius: '4px', textDecoration: 'none' }
+    }, '👉 Authorize Google Drive');
   }
   
-  if (loading) {
-    return React.createElement('p', { style: { marginTop: '10px', fontSize: '12px' } }, 'Loading...');
-  }
-  
-  return React.createElement('a', {
-    href: authUrl,
-    target: '_blank',
-    rel: 'noopener noreferrer',
-    style: {
-      display: 'inline-block',
-      marginTop: '10px',
-      background: '#34a853',
-      color: 'white',
-      border: 'none',
-      padding: '10px 16px',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      width: '100%',
-      textAlign: 'center',
-      textDecoration: 'none',
-      boxSizing: 'border-box'
-    }
-  }, '👉 Tap to Authorize Google Drive');
+  return React.createElement('button', {
+    onClick: fetchUrl,
+    style: { marginTop: '10px', padding: '10px 20px', background: '#4285f4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }
+  }, '📱 Get Auth Link');
 }
 
 // Load Google Drive Picker API
@@ -135,31 +104,52 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
   const handleConnectGoogle = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please log in first');
-        return;
-      }
+      if (!token) return;
       
-      // Get auth URL from backend
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (!response.data.authUrl) {
-        alert('Could not get Google auth URL');
-        return;
-      }
+      if (!response.data.authUrl) return;
       
-      // Try popup first, fallback to redirect
+      // Open popup and listen for auth code
       const popup = window.open(response.data.authUrl, 'GoogleDriveAuth', 'width=500,height=600');
       
-      if (!popup || popup.closed === true || popup === null) {
-        // Popup blocked - show message and stop
-        alert('Popup was blocked by your browser.\n\nPlease use the "Open in New Tab" button below instead.');
+      if (!popup) {
+        // Popup blocked - user can use the "Get Auth Link" button below
         return;
       }
+
+      // Listen for auth code from popup
+      const handleMessage = async (event) => {
+        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          window.removeEventListener('message', handleMessage);
+          
+          try {
+            await axios.post(`${API_URL}/api/google/connect`, 
+              { code: event.data.code },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            checkFolderMapping();
+            setShowConnectModal(false);
+          } catch (err) {
+            console.error('Failed to complete auth:', err);
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+
+      // Cleanup on popup close
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          window.removeEventListener('message', handleMessage);
+          checkFolderMapping();
+        }
+      }, 500);
     } catch (error) {
-      alert('Error: ' + (error.response?.data?.error || error.message));
+      console.error('Drive connect error:', error);
     }
   };
 

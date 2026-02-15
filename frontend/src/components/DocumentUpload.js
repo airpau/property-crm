@@ -173,7 +173,6 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
           }
         }
       );
-    };
 
       if (response.data.success) {
         loadDocuments();

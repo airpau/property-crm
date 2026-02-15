@@ -42,7 +42,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRouter);
 
 // OAuth callback must be PUBLIC (Google redirects here without auth token)
-// Mount the callback first without auth middleware
+// This must be BEFORE mounting the protected /api/google router
 app.get('/api/google/callback', (req, res) => {
   const code = req.query.code;
   const state = req.query.state;
@@ -90,22 +90,15 @@ app.get('/api/google/callback', (req, res) => {
       </div>
       <script>
         const code = '${code}';
-        // Try to communicate with parent window
         try {
           if (window.opener) {
             window.opener.postMessage({type: 'GOOGLE_AUTH_SUCCESS', code: code}, '*');
           }
         } catch(e) {}
-        
-        // Also store the code in localStorage as backup
         try {
           localStorage.setItem('google_auth_code', code);
         } catch(e) {}
-        
-        // Close after 2 seconds
-        setTimeout(() => {
-          window.close();
-        }, 2000);
+        setTimeout(() => { window.close(); }, 2000);
       </script>
     </body>
     </html>

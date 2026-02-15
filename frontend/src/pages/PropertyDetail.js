@@ -237,7 +237,10 @@ function PropertyDetail() {
                   {/* Tenants in this tenancy - Clickable with Edit */}
                   {tenancy.tenants && tenancy.tenants.length > 0 && (
                     <div className="tenant-list">
-                      {tenancy.tenants.map(tenant => (
+                      {console.log('Rendering tenant list with', tenancy.tenants.length, 'tenants')}
+                      {tenancy.tenants.map(tenant => {
+                        console.log('Rendering tenant:', tenant.id, tenant.first_name, tenant.last_name);
+                        return (
                         <div 
                           key={tenant.id} 
                           className="tenant-item"
@@ -254,11 +257,22 @@ function PropertyDetail() {
                           <button 
                             className="edit-tenant-btn"
                             onClick={(e) => handleEditTenant(tenant, e)}
+                            style={{
+                              padding: '8px 12px',
+                              background: '#4f46e5',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              marginLeft: '8px'
+                            }}
                           >
                             ✏️ Edit
                           </button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 

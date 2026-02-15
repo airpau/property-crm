@@ -177,6 +177,20 @@ body {
   text-transform: uppercase;
 }
 
+.stat-number.positive {
+  color: #10b981;
+}
+
+.stat-number.negative {
+  color: #dc2626;
+}
+
+.net-income {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
 /* Loading & Error States */
 .loading, .error, .empty-state {
   text-align: center;

@@ -7,6 +7,7 @@ const API_URL = process.env.REACT_APP_API_URL || '';
 
 function PropertyList() {
   const [properties, setProperties] = useState([]);
+  const [propertyExpenses, setPropertyExpenses] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -30,12 +31,56 @@ function PropertyList() {
       
       console.log('Properties loaded:', response.data.length);
       setProperties(response.data);
+      
+      // Fetch expenses for all properties
+      await fetchAllExpenses(response.data, token);
+      
       setLoading(false);
     } catch (err) {
       console.error('Error loading properties:', err.response?.status, err.response?.data);
       setError(`Failed to load properties: ${err.response?.data?.error || err.message}`);
       setLoading(false);
     }
+  };
+  
+  const fetchAllExpenses = async (propertiesList, token) => {
+    const expensesMap = {};
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    for (const property of propertiesList) {
+      try {
+        const response = await axios.get(
+          `${API_URL}/api/expenses/property/${property.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        const allExpenses = response.data || [];
+        
+        // Calculate this month's expenses
+        let monthlyTotal = 0;
+        allExpenses.forEach(expense => {
+          const amount = parseFloat(expense.amount) || 0;
+          
+          if (expense.frequency === 'one-off') {
+            const expenseDate = new Date(expense.expense_date);
+            if (expenseDate >= firstDayOfMonth) {
+              monthlyTotal += amount;
+            }
+          } else {
+            // Recurring expense
+            monthlyTotal += amount;
+          }
+        });
+        
+        expensesMap[property.id] = monthlyTotal;
+      } catch (err) {
+        console.error(`Error fetching expenses for property ${property.id}:`, err);
+        expensesMap[property.id] = 0;
+      }
+    }
+    
+    setPropertyExpenses(expensesMap);
   };
 
   const handlePropertyAdded = (newProperty) => {
@@ -107,11 +152,11 @@ function PropertyList() {
                   <div className="stat-number">£{property.monthly_income?.toLocaleString() || 0}</div>
                   <div className="stat-label">Monthly Income</div>
                 </div>
-                <div className="property-stat">
-                  <div className="stat-number">
-                    {property.expiring_certs || 0}
+                <div className="property-stat net-income">
+                  <div className={`stat-number ${(property.monthly_income || 0) - (propertyExpenses[property.id] || 0) >= 0 ? 'positive' : 'negative'}`}>
+                    £{((property.monthly_income || 0) - (propertyExpenses[property.id] || 0)).toLocaleString()}
                   </div>
-                  <div className="stat-label">Expiring Certs</div>
+                  <div className="stat-label">Net (Income - Expenses)</div>
                 </div>
               </div>
             </Link>

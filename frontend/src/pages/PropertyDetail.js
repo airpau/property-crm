@@ -34,12 +34,22 @@ function PropertyDetail() {
   const checkDriveStatus = async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Checking Drive status, token exists:', !!token);
+      
+      if (!token) {
+        console.log('No token - user not logged in');
+        setDriveConnected(false);
+        return;
+      }
+      
       const response = await axios.get(`${API_URL}/api/google/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('Drive status:', response.data);
       setDriveConnected(response.data.connected);
       setDriveEmail(response.data.email);
     } catch (error) {
+      console.error('Drive status check failed:', error.response?.data || error.message);
       setDriveConnected(false);
     }
   };
@@ -162,9 +172,18 @@ function PropertyDetail() {
   const connectGoogleDrive = async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Connecting Drive, token exists:', !!token);
+      
+      if (!token) {
+        alert('Please log in first');
+        return;
+      }
+      
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      console.log('Auth URL received:', response.data.authUrl ? 'yes' : 'no');
       
       // Open Google OAuth in popup
       const popup = window.open(
@@ -181,7 +200,8 @@ function PropertyDetail() {
         }
       }, 500);
     } catch (error) {
-      alert('Error connecting to Google Drive. Please try again.');
+      console.error('Drive connect error:', error.response?.data || error.message);
+      alert('Error: ' + (error.response?.data?.error || 'Failed to connect to Google Drive'));
     }
   };
 

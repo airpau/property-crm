@@ -70,27 +70,46 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
     }
   };
 
-  const handleConnectGoogle = () => {
-    // Open Google OAuth in popup
-    const width = 500;
-    const height = 600;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    const popup = window.open(
-      `${API_URL}/api/drive/auth`,
-      'GoogleAuth',
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
-
-    // Listen for OAuth completion
-    window.addEventListener('message', (event) => {
-      if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
-        setGoogleAuth(event.data.token);
-        setShowConnectModal(false);
-        popup.close();
+  const handleConnectGoogle = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in first');
+        return;
       }
-    });
+      
+      // Get auth URL from backend
+      const response = await axios.get(`${API_URL}/api/google/auth-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.data.authUrl) {
+        alert('Could not get Google auth URL');
+        return;
+      }
+      
+      // Open Google OAuth in popup
+      const width = 500;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      
+      const popup = window.open(
+        response.data.authUrl,
+        'GoogleAuth',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      // Poll for popup closure and reload status
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          checkFolderMapping();
+        }
+      }, 500);
+    } catch (error) {
+      alert('Error: ' + (error.response?.data?.error || error.message));
+    }
   };
 
   const openDrivePicker = async () => {

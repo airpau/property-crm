@@ -220,4 +220,43 @@ router.delete('/drive-token', async (req, res) => {
   }
 });
 
+// Delete a folder mapping
+router.delete('/drive-folders/:folderId', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    
+    // Verify user owns this folder mapping
+    const { data: folder, error: fetchError } = await supabase
+      .from('property_drive_folders')
+      .select('property_id')
+      .eq('id', req.params.folderId)
+      .single();
+
+    if (fetchError || !folder) {
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+
+    // Verify user owns the property
+    const { data: property } = await supabase
+      .from('properties')
+      .select('landlord_id')
+      .eq('id', folder.property_id)
+      .single();
+
+    if (!property || property.landlord_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await supabase
+      .from('property_drive_folders')
+      .delete()
+      .eq('id', req.params.folderId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting folder:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

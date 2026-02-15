@@ -541,8 +541,9 @@ function PropertyDetail() {
         {/* Document Management Section */}
         <div className="section-card documents-section" style={{ gridColumn: '1 / -1' }}>
           <div className="documents-header">
-            <h3>📁 Document Management</h3>
-            <div className="drive-status">
+            <h3>📁 Integrations</h3>
+            <div className="drive-status" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              {/* Google Drive */}
               {driveConnected ? (
                 <span className="drive-connected">
                   ✅ Drive: {driveEmail}
@@ -551,6 +552,19 @@ function PropertyDetail() {
               ) : (
                 <button onClick={connectGoogleDrive} className="connect-drive-btn">
                   🔗 Connect Google Drive
+                </button>
+              )}
+              
+              {/* QuickBooks */}
+              {qbConnected ? (
+                <span className="drive-connected" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#2ca01c' }}>📊</span>
+                  <span>QuickBooks: {qbCompanyName}</span>
+                  <button onClick={disconnectQuickBooks} className="disconnect-btn">Disconnect</button>
+                </span>
+              ) : (
+                <button onClick={connectQuickBooks} className="connect-drive-btn" style={{ background: '#2ca01c!important' }}>
+                  🔗 Connect QuickBooks
                 </button>
               )}
             </div>

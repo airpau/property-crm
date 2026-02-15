@@ -14,6 +14,7 @@ const driveDocumentsRouter = require('./routes/drive-documents');
 const googleAuthRouter = require('./routes/google-auth');
 const quickbooksAuthRouter = require('./routes/quickbooks-auth');
 const expensesRouter = require('./routes/expenses');
+const saBookingsRouter = require('./routes/sa-bookings');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -183,6 +184,9 @@ app.use('/api/quickbooks', authMiddleware, quickbooksAuthRouter);
 
 // Expense tracking routes
 app.use('/api/expenses', authMiddleware, expensesRouter);
+
+// Serviced accommodation bookings
+app.use('/api/sa-bookings', authMiddleware, saBookingsRouter);
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {

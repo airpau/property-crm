@@ -5,7 +5,7 @@ import './DocumentUpload.css';
 const API_URL = process.env.REACT_APP_API_URL || '';
 
 // Component that fetches and displays auth URL as clickable link
-function AltConnectButton() {
+function DirectAuthLink() {
   const [authUrl, setAuthUrl] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -375,9 +375,9 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
               </button>
             </div>
             <p style={{marginTop: '15px', fontSize: '12px', color: '#666', textAlign: 'center'}}>
-              If popup blocked, use this:
+              If popup blocked:
             </p>
-            <AltConnectButton />
+            <DirectAuthLink />
           </div>
         </div>
       )}

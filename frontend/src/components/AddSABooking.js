@@ -29,41 +29,56 @@ function AddSABooking({ property, onClose, onSuccess }) {
     total_nights: 0,
     gross_booking_value: '',
     platform_fee: '',
+    cleaning_fee: '',
     net_revenue: '',
     status: 'confirmed',
     payment_status: 'pending',
     notes: ''
   });
   
-  // Auto-calculate nights and totals when dates change
+  // Calculate nights from dates
   useEffect(() => {
     if (booking.check_in && booking.check_out) {
       const checkIn = new Date(booking.check_in);
       const checkOut = new Date(booking.check_out);
-      const diffTime = Math.abs(checkOut - checkIn);
+      const diffTime = checkOut - checkIn;
       const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      setBooking(prev => ({
-        ...prev,
-        total_nights: nights,
-        gross_booking_value: (nights * (parseFloat(prev.nightly_rate) || 0)).toFixed(2)
-      }));
+      if (nights > 0) {
+        setBooking(prev => ({
+          ...prev,
+          total_nights: nights
+        }));
+        
+        // Auto-suggest gross if user hasn't entered it manually
+        if (!prev.gross_booking_value && prev.nightly_rate) {
+          const suggested = (nights * parseFloat(prev.nightly_rate)).toFixed(2);
+          setBooking(prev => ({
+            ...prev,
+            total_nights: nights,
+            gross_booking_value: suggested
+          }));
+        }
+      }
     }
   }, [booking.check_in, booking.check_out, booking.nightly_rate]);
   
-  // Auto-calculate net revenue
+  // Recalculate net revenue when any value changes
   useEffect(() => {
     const gross = parseFloat(booking.gross_booking_value) || 0;
-    const fee = parseFloat(booking.platform_fee) || 0;
+    const platformFee = parseFloat(booking.platform_fee) || 0;
+    const cleaningFee = parseFloat(booking.cleaning_fee) || 0;
+    const net = gross - platformFee - cleaningFee;
+    
     setBooking(prev => ({
       ...prev,
-      net_revenue: (gross - fee).toFixed(2)
+      net_revenue: net > 0 ? net.toFixed(2) : '0.00'
     }));
-  }, [booking.gross_booking_value, booking.platform_fee]);
+  }, [booking.gross_booking_value, booking.platform_fee, booking.cleaning_fee]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setBooking({ ...booking, [name]: value });
+    setBooking(prev => ({ ...prev, [name]: value }));
   };
   
   const handleSubmit = async (e) => {
@@ -77,11 +92,12 @@ function AddSABooking({ property, onClose, onSuccess }) {
       const bookingData = {
         property_id: property.id,
         ...booking,
-        nightly_rate: parseFloat(booking.nightly_rate),
-        total_nights: parseInt(booking.total_nights),
-        gross_booking_value: parseFloat(booking.gross_booking_value),
+        nightly_rate: parseFloat(booking.nightly_rate) || 0,
+        total_nights: parseInt(booking.total_nights) || 0,
+        gross_booking_value: parseFloat(booking.gross_booking_value) || 0,
         platform_fee: parseFloat(booking.platform_fee) || 0,
-        net_revenue: parseFloat(booking.net_revenue)
+        cleaning_fee: parseFloat(booking.cleaning_fee) || 0,
+        net_revenue: parseFloat(booking.net_revenue) || 0
       };
       
       await axios.post(
@@ -100,25 +116,38 @@ function AddSABooking({ property, onClose, onSuccess }) {
     }
   };
   
+  // Calculate PM deductions based on net revenue
   const calculatePMDeduction = () => {
-    if (!property.is_managed) return 0;
+    if (!property.is_managed) return null;
     
     const net = parseFloat(booking.net_revenue) || 0;
-    const cleaningFee = parseFloat(property.fixed_cleaning_fee) || 0;
     const pmPercent = parseFloat(property.management_fee_percent) || 0;
     
-    const revenueAfterCleaning = Math.max(0, net - cleaningFee);
-    const pmFee = (revenueAfterCleaning * pmPercent) / 100;
+    // PM fee is based on net revenue (after platform and cleaning fees already deducted)
+    const pmFee = (net * pmPercent) / 100;
     
     return {
-      cleaningFee,
       pmFee,
-      total: cleaningFee + pmFee,
-      yourNet: net - cleaningFee - pmFee
+      yourNet: net - pmFee,
+      pmPercent
     };
   };
   
   const pmDeduction = calculatePMDeduction();
+  
+  // Quick fill helpers
+  const fillSuggestedGross = () => {
+    if (booking.nightly_rate && booking.total_nights) {
+      const suggested = (booking.total_nights * parseFloat(booking.nightly_rate)).toFixed(2);
+      setBooking(prev => ({ ...prev, gross_booking_value: suggested }));
+    }
+  };
+  
+  const fillAutoCleaning = () => {
+    if (property.fixed_cleaning_fee) {
+      setBooking(prev => ({ ...prev, cleaning_fee: property.fixed_cleaning_fee }));
+    }
+  };
   
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -253,10 +282,13 @@ function AddSABooking({ property, onClose, onSuccess }) {
           
           <div className="form-section">
             <h3>Financials</h3>
+            <p className="section-hint" style={{color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem'}}>
+              Enter values as shown on your platform statement. Net is calculated automatically.
+            </p>
             
             <div className="form-row">
               <div className="form-group">
-                <label>Nightly Rate (£) *</label>
+                <label>Nightly Rate (£)</label>
                 <input
                   type="number"
                   name="nightly_rate"
@@ -264,20 +296,35 @@ function AddSABooking({ property, onClose, onSuccess }) {
                   onChange={handleChange}
                   step="0.01"
                   min="0"
-                  placeholder="0.00"
-                  required
+                  placeholder="For reference"
                 />
               </div>
               
               <div className="form-group">
-                <label>Gross Booking Value (£)</label>
-                <input
-                  type="number"
-                  name="gross_booking_value"
-                  value={booking.gross_booking_value}
-                  readOnly
-                  style={{ background: '#f3f4f6', fontWeight: 600 }}
-                />
+                <label>Gross Booking Value (£) *</label>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <input
+                    type="number"
+                    name="gross_booking_value"
+                    value={booking.gross_booking_value}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="Total from platform"
+                    required
+                    style={{flex: 1}}
+                  />
+                  {booking.nightly_rate && booking.total_nights && (
+                    <button 
+                      type="button" 
+                      onClick={fillSuggestedGross}
+                      className="btn-suggest"
+                      title="Autofill: nights × rate"
+                    >
+                      ✨
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -291,10 +338,38 @@ function AddSABooking({ property, onClose, onSuccess }) {
                   onChange={handleChange}
                   step="0.01"
                   min="0"
-                  placeholder="0.00"
+                  placeholder="Service fee"
                 />
               </div>
               
+              <div className="form-group">
+                <label>Cleaning Fee Paid (£)</label>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <input
+                    type="number"
+                    name="cleaning_fee"
+                    value={booking.cleaning_fee}
+                    onChange={handleChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="Amount paid out"
+                    style={{flex: 1}}
+                  />
+                  {property.is_managed && property.fixed_cleaning_fee && (
+                    <button 
+                      type="button" 
+                      onClick={fillAutoCleaning}
+                      className="btn-suggest"
+                      title={`Autofill: £${property.fixed_cleaning_fee}`}
+                    >
+                      🧹
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="form-row">
               <div className="form-group">
                 <label>Net Revenue (£)</label>
                 <input
@@ -309,6 +384,9 @@ function AddSABooking({ property, onClose, onSuccess }) {
                     fontSize: '1.1rem'
                   }}
                 />
+                <small style={{color: '#6b7280', display: 'block', marginTop: '4px'}}>
+                  Gross − Platform Fee − Cleaning Fee
+                </small>
               </div>
             </div>
             
@@ -318,71 +396,51 @@ function AddSABooking({ property, onClose, onSuccess }) {
                   type="checkbox"
                   name="payment_received"
                   checked={booking.payment_status === 'received'}
-                  onChange={(e) => setBooking({ 
-                    ...booking, 
-                    payment_status: e.target.checked ? 'received' : 'pending',
-                    received_date: e.target.checked ? new Date().toISOString().split('T')[0] : ''
-                  })}
+                  onChange={(e) => setBooking(prev => ({ 
+                    ...prev, 
+                    payment_status: e.target.checked ? 'received' : 'pending'
+                  }))}
                 />
                 Payment Already Received
               </label>
             </div>
           </div>
           
-          {property.is_managed && pmDeduction.total > 0 && (
+          {property.is_managed && pmDeduction && parseFloat(booking.net_revenue) > 0 && (
             <div className="form-section pm-summary">
               <h3>🏢 Property Manager Deduction</h3>
               <div className="pm-calc">
                 <div className="pm-row">
-                  <span>Net Revenue:</span>
+                  <span>Net Revenue (your income):</span>
                   <span>£{parseFloat(booking.net_revenue || 0).toFixed(2)}</span>
                 </div>
                 <div className="pm-row">
-                  <span>- Cleaning Fee:</span>
-                  <span>£{pmDeduction.cleaningFee.toFixed(2)}</span>
-                </div>
-                <div className="pm-row">
-                  <span>- PM Fee ({property.management_fee_percent}%):</span>
+                  <span>− PM Fee ({pmDeduction.pmPercent}%):</span>
                   <span>£{pmDeduction.pmFee.toFixed(2)}</span>
                 </div>
-                <div className="pm-row total">
-                  <span>Total PM Deduction:</span>
-                  <span>£{pmDeduction.total.toFixed(2)}</span>
-                </div>
-                <div className="pm-row net">
-                  <span>Your Net:</span>
+                <div className="pm-row total highlight">
+                  <span>Your Final Take-Home:</span>
                   <span>£{pmDeduction.yourNet.toFixed(2)}</span>
                 </div>
               </div>
-              <small className="hint">
-                PM: {property.property_manager_name || 'Not named'}
-              </small>
+              <p className="pm-note" style={{fontSize: '0.8rem', color: '#6b7280', marginTop: '8px'}}>
+                PM fee calculated on net revenue after platform & cleaning fees.
+              </p>
             </div>
           )}
           
-          <div className="form-group">
-            <label>Notes</label>
-            <textarea
-              name="notes"
-              value={booking.notes}
-              onChange={handleChange}
-              rows="2"
-              placeholder="Any special requests or notes..."
-            />
-          </div>
-          
           {error && (
-            <div className="error-message">
-              ⚠️ {error}
+            <div className="error-message" style={{color: '#dc2626', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '6px'}}>
+              {error}
             </div>
           )}
           
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Booking'}
+              {loading ? 'Creating...' : 'Add Booking'}
             </button>
           </div>
         </form>

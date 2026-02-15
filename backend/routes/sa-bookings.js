@@ -227,12 +227,11 @@ router.post('/', async (req, res) => {
     // Auto-calculate PM fees if managed
     if (property.is_managed && property.property_category === 'sa') {
       const netRevenue = parseFloat(bookingData.net_revenue) || 0;
-      const cleaningFee = parseFloat(property.fixed_cleaning_fee) || 0;
+      const cleaningFee = parseFloat(bookingData.cleaning_fee) || 0;
       const pmPercent = parseFloat(property.management_fee_percent) || 0;
       
-      // PM fee is percentage of (net - cleaning)
-      const revenueAfterCleaning = Math.max(0, netRevenue - cleaningFee);
-      const pmFee = (revenueAfterCleaning * pmPercent) / 100;
+      // PM fee is percentage of net revenue (already has platform and cleaning deducted)
+      const pmFee = (netRevenue * pmPercent) / 100;
       
       bookingData.cleaning_fee = cleaningFee;
       bookingData.pm_fee_amount = pmFee;

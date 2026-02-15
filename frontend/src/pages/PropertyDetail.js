@@ -24,10 +24,15 @@ function PropertyDetail() {
   const [activeDocumentsTab, setActiveDocumentsTab] = useState('compliance');
   const [propertyDocuments, setPropertyDocuments] = useState([]);
   const [complianceDocuments, setComplianceDocuments] = useState([]);
+  
+  // QuickBooks integration state
+  const [qbConnected, setQbConnected] = useState(false);
+  const [qbCompanyName, setQbCompanyName] = useState(null);
 
   useEffect(() => {
     fetchProperty();
     checkDriveStatus();
+    checkQuickBooksStatus();
     loadPropertyDocuments();
   }, [id]);
 
@@ -46,6 +51,24 @@ function PropertyDetail() {
       setDriveEmail(response.data.email);
     } catch (error) {
       setDriveConnected(false);
+    }
+  };
+
+  const checkQuickBooksStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setQbConnected(false);
+        return;
+      }
+      
+      const response = await axios.get(`${API_URL}/api/quickbooks/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setQbConnected(response.data.connected);
+      setQbCompanyName(response.data.companyName);
+    } catch (error) {
+      setQbConnected(false);
     }
   };
 
@@ -231,6 +254,77 @@ function PropertyDetail() {
       setDriveEmail(null);
     } catch (error) {
       alert('Error disconnecting Google Drive.');
+    }
+  };
+
+  // QuickBooks connection
+  const connectQuickBooks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+      
+      const response = await axios.get(`${API_URL}/api/quickbooks/auth-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.data.authUrl) {
+        return;
+      }
+      
+      // Open QuickBooks OAuth in popup
+      const popup = window.open(
+        response.data.authUrl,
+        'QuickBooksAuth',
+        'width=500,height=600,scrollbars=yes'
+      );
+
+      // Listen for auth code from popup
+      const handleMessage = async (event) => {
+        if (event.data?.type === 'QB_AUTH_SUCCESS') {
+          window.removeEventListener('message', handleMessage);
+          
+          // Send code to backend with our token
+          try {
+            await axios.post(`${API_URL}/api/quickbooks/connect`, 
+              { code: event.data.code, realmId: event.data.realmId },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            checkQuickBooksStatus();
+          } catch (err) {
+            console.error('Failed to complete QB auth:', err);
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+
+      // Also poll for popup closure
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          window.removeEventListener('message', handleMessage);
+          checkQuickBooksStatus();
+        }
+      }, 500);
+    } catch (error) {
+      console.error('QuickBooks connect error:', error);
+    }
+  };
+
+  const disconnectQuickBooks = async () => {
+    if (!window.confirm('Disconnect QuickBooks?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/api/quickbooks/disconnect`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setQbConnected(false);
+      setQbCompanyName(null);
+    } catch (error) {
+      alert('Error disconnecting QuickBooks.');
     }
   };
 

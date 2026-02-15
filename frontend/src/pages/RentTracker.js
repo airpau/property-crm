@@ -22,6 +22,7 @@ function RentTracker() {
 
   const fetchData = async () => {
     try {
+      const token = localStorage.getItem('token');
       // Parse selected month
       const [year, month] = selectedMonth.split('-').map(Number);
       const startOfMonth = new Date(year, month - 1, 1).toISOString();
@@ -29,6 +30,7 @@ function RentTracker() {
 
       // Fetch payments for the selected month
       const paymentsRes = await axios.get(`${API_URL}/api/rent-payments`, {
+        headers: { Authorization: `Bearer ${token}` },
         params: {
           start_date: startOfMonth,
           end_date: endOfMonth

@@ -62,7 +62,10 @@ function PropertyDetail() {
 
   const fetchProperty = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/properties/${id}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/properties/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setProperty(response.data);
       setLoading(false);
       
@@ -73,6 +76,7 @@ function PropertyDetail() {
       
       try {
         const paymentsRes = await axios.get(`${API_URL}/api/rent-payments`, {
+          headers: { Authorization: `Bearer ${token}` },
           params: {
             property_id: id,
             start_date: startOfMonth.toISOString(),

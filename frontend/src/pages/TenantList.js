@@ -34,7 +34,10 @@ function TenantList() {
 
   const fetchTenants = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/tenants`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/tenants`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       // Enrich tenant data with property and payment info
       const enrichedTenants = response.data.map(tenant => {

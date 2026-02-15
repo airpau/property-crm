@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DocumentUpload from '../components/DocumentUpload';
 import DriveFolderMapping from '../components/DriveFolderMapping';
+import AddTenancy from '../components/AddTenancy';
 import './PropertyDetail.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -28,6 +29,9 @@ function PropertyDetail() {
   // QuickBooks integration state
   const [qbConnected, setQbConnected] = useState(false);
   const [qbCompanyName, setQbCompanyName] = useState(null);
+  
+  // Add tenancy modal state
+  const [showAddTenancy, setShowAddTenancy] = useState(false);
 
   useEffect(() => {
     fetchProperty();
@@ -386,7 +390,28 @@ function PropertyDetail() {
       <div className="property-content-grid">
         {/* Tenancies Section */}
         <div className="section-card">
-          <h3>🏠 Active Tenancies</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>🏠 Active Tenancies</h3>
+            <button
+              className="add-tenancy-btn"
+              onClick={() => setShowAddTenancy(true)}
+              style={{
+                background: '#4f46e5',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>+</span> Add Tenancy
+            </button>
+          </div>
           <div className="tenancy-list">
             {property.tenancies?.filter(t => t.status === 'active').length === 0 ? (
               <div className="empty-state">
@@ -811,6 +836,18 @@ function PropertyDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add Tenancy Modal */}
+      {showAddTenancy && (
+        <AddTenancy
+          propertyId={id}
+          onClose={() => setShowAddTenancy(false)}
+          onSuccess={() => {
+            fetchProperty(); // Refresh property data
+            checkDriveStatus(); // Refresh any related data
+          }}
+        />
       )}
     </div>
   );

@@ -71,46 +71,31 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
   };
 
   const handleConnectGoogle = async () => {
-    alert('BUTTON CLICKED! Token check starting...');
     try {
       const token = localStorage.getItem('token');
-      alert('Token found: ' + (token ? 'YES' : 'NO'));
       if (!token) {
         alert('Please log in first');
         return;
       }
       
-      alert('Fetching auth URL...');
       // Get auth URL from backend
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert('Auth URL received: ' + (response.data.authUrl ? 'YES' : 'NO'));
       
       if (!response.data.authUrl) {
         alert('Could not get Google auth URL');
         return;
       }
       
-      // Open Google OAuth in popup
-      const width = 500;
-      const height = 600;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
+      // Try popup first, fallback to redirect
+      const popup = window.open(response.data.authUrl, 'GoogleDriveAuth', 'width=500,height=600');
       
-      const popup = window.open(
-        response.data.authUrl,
-        'GoogleAuth',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
-
-      // Poll for popup closure and reload status
-      const pollTimer = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(pollTimer);
-          checkFolderMapping();
-        }
-      }, 500);
+      if (!popup || popup.closed === true || popup === null) {
+        // Popup blocked - show message and stop
+        alert('Popup was blocked by your browser.\n\nPlease use the "Open in New Tab" button below instead.');
+        return;
+      }
     } catch (error) {
       alert('Error: ' + (error.response?.data?.error || error.message));
     }
@@ -327,6 +312,25 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
                 Cancel
               </button>
             </div>
+            <p style={{marginTop: '15px', fontSize: '12px', color: '#666', textAlign: 'center'}}>
+              If popup blocked, use this:
+            </p>
+            <button 
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('token');
+                  const response = await axios.get(`${API_URL}/api/google/auth-url`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  window.open(response.data.authUrl, '_blank');
+                } catch (e) {
+                  alert('Error: ' + e.message);
+                }
+              }}
+              style={{marginTop: '5px', background: '#f0f0f0', border: '1px solid #ccc', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px'}}
+            >
+              Open in New Tab →
+            </button>
           </div>
         </div>
       )}

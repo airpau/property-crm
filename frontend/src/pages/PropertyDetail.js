@@ -172,18 +172,23 @@ function PropertyDetail() {
   const connectGoogleDrive = async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Connecting Drive, token exists:', !!token);
       
       if (!token) {
         alert('Please log in first');
         return;
       }
       
+      // Show loading
+      alert('Connecting to Google Drive...');
+      
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Auth URL received:', response.data.authUrl ? 'yes' : 'no');
+      if (!response.data.authUrl) {
+        alert('No auth URL received from server');
+        return;
+      }
       
       // Open Google OAuth in popup
       const popup = window.open(
@@ -191,6 +196,11 @@ function PropertyDetail() {
         'GoogleDriveAuth',
         'width=500,height=600,scrollbars=yes'
       );
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        alert('Popup blocked! Please allow popups for this site and try again.');
+        return;
+      }
 
       // Poll for popup closure
       const pollTimer = setInterval(() => {
@@ -200,8 +210,8 @@ function PropertyDetail() {
         }
       }, 500);
     } catch (error) {
-      console.error('Drive connect error:', error.response?.data || error.message);
-      alert('Error: ' + (error.response?.data?.error || 'Failed to connect to Google Drive'));
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      alert('Google Drive Error: ' + errorMsg);
     }
   };
 

@@ -18,8 +18,8 @@ function getSupabase() {
 const QB_CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID;
 const QB_CLIENT_SECRET = process.env.QUICKBOOKS_CLIENT_SECRET;
 const QB_REDIRECT_URI = process.env.QUICKBOOKS_REDIRECT_URI || 'https://property-crm-api-8t0r.onrender.com/api/quickbooks/callback';
-const QB_SANDBOX_URL = 'https://sandbox-accounts.platform.intuit.com/oauth2';
-const QB_PRODUCTION_URL = 'https://accounts.platform.intuit.com/oauth2';
+const QB_SANDBOX_URL = 'https://oauth.platform.intuit.com/oauth2';
+const QB_PRODUCTION_URL = 'https://oauth.platform.intuit.com/oauth2';
 const QB_SANDBOX_API = 'https://sandbox-quickbooks.api.intuit.com';
 const QB_PRODUCTION_API = 'https://quickbooks.api.intuit.com';
 

@@ -18,13 +18,12 @@ function getSupabase() {
 const QB_CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID;
 const QB_CLIENT_SECRET = process.env.QUICKBOOKS_CLIENT_SECRET;
 const QB_REDIRECT_URI = process.env.QUICKBOOKS_REDIRECT_URI || 'https://property-crm-api-8t0r.onrender.com/api/quickbooks/callback';
-const QB_SANDBOX_URL = 'https://oauth.platform.intuit.com/oauth2';
-const QB_PRODUCTION_URL = 'https://oauth.platform.intuit.com/oauth2';
+const QB_AUTHORIZE_URL = 'https://appcenter.intuit.com/connect/oauth2';
+const QB_TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
 const QB_SANDBOX_API = 'https://sandbox-quickbooks.api.intuit.com';
 const QB_PRODUCTION_API = 'https://quickbooks.api.intuit.com';
 
 const environment = process.env.QUICKBOOKS_ENVIRONMENT || 'sandbox';
-const baseUrl = environment === 'production' ? QB_PRODUCTION_URL : QB_SANDBOX_URL;
 const apiUrl = environment === 'production' ? QB_PRODUCTION_API : QB_SANDBOX_API;
 
 // Generate QuickBooks OAuth URL
@@ -38,12 +37,11 @@ router.get('/auth-url', async (req, res) => {
     const params = new URLSearchParams({
       client_id: QB_CLIENT_ID,
       redirect_uri: QB_REDIRECT_URI,
-      response_type: 'code',
       scope: 'com.intuit.quickbooks.accounting',
       state: state
     });
 
-    const authUrl = `${baseUrl}/v1?${params.toString()}`;
+    const authUrl = `${QB_AUTHORIZE_URL}?${params.toString()}`;
     res.json({ authUrl });
   } catch (error) {
     console.error('Error generating QB auth URL:', error);
@@ -105,7 +103,7 @@ router.post('/connect', async (req, res) => {
     }
 
     // Exchange code for access token
-    const tokenResponse = await fetch(`${baseUrl}/v1/tokens/bearer`, {
+    const tokenResponse = await fetch(QB_TOKEN_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

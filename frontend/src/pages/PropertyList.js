@@ -18,13 +18,22 @@ function PropertyList() {
   const fetchProperties = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in again');
+        setLoading(false);
+        return;
+      }
+      
       const response = await axios.get(`${API_URL}/api/properties`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      console.log('Properties loaded:', response.data.length);
       setProperties(response.data);
       setLoading(false);
     } catch (err) {
-      setError('Failed to load properties');
+      console.error('Error loading properties:', err.response?.status, err.response?.data);
+      setError(`Failed to load properties: ${err.response?.data?.error || err.message}`);
       setLoading(false);
     }
   };

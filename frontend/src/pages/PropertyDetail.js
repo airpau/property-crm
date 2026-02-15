@@ -57,15 +57,12 @@ function PropertyDetail() {
       setComplianceDocuments(compliance);
       setPropertyDocuments(property);
     } catch (error) {
-      console.error('Error loading documents:', error);
     }
   };
 
   const fetchProperty = async () => {
     try {
-      console.log('Fetching property, API_URL:', API_URL);
       const response = await axios.get(`${API_URL}/api/properties/${id}`);
-      console.log('Property loaded:', response.data);
       setProperty(response.data);
       setLoading(false);
       
@@ -98,7 +95,6 @@ function PropertyDetail() {
           
         setUpcomingPayments(pendingPayments);
       } catch (paymentErr) {
-        console.error('Error fetching payments:', paymentErr);
         // Fallback to tenancy-based calculation if API fails
         if (response.data.tenancies) {
           const payments = response.data.tenancies
@@ -137,26 +133,18 @@ function PropertyDetail() {
     
     try {
       setSaving(true);
-      console.log('Saving tenant...', editingTenant.id);
-      console.log('API_URL:', API_URL);
-      console.log('Full URL:', `${API_URL}/api/tenants/${editingTenant.id}`);
-      console.log('Data:', { email: editForm.email, phone: editForm.phone });
       
       const response = await axios.put(`${API_URL}/api/tenants/${editingTenant.id}`, {
         email: editForm.email,
         phone: editForm.phone
       });
       
-      console.log('Save response:', response.data);
       
       // Refresh property data
       await fetchProperty();
       setEditingTenant(null);
       setSaving(false);
     } catch (err) {
-      console.error('Error saving tenant:', err);
-      console.error('Error response:', err.response);
-      console.error('Error message:', err.message);
       alert('Failed to save changes. Check console for details.');
       setSaving(false);
     }
@@ -189,7 +177,6 @@ function PropertyDetail() {
         }
       }, 500);
     } catch (error) {
-      console.error('Error getting auth URL:', error);
       alert('Error connecting to Google Drive. Please try again.');
     }
   };
@@ -205,7 +192,6 @@ function PropertyDetail() {
       setDriveConnected(false);
       setDriveEmail(null);
     } catch (error) {
-      console.error('Error disconnecting:', error);
       alert('Error disconnecting Google Drive.');
     }
   };
@@ -323,30 +309,13 @@ function PropertyDetail() {
                     )}
                   </div>
 
-                  {/* DEBUG BANNER - Remove after testing */}
-                  <div style={{
-                    background: '#ef4444',
-                    color: 'white',
-                    padding: '8px',
-                    margin: '8px 0',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    fontWeight: 'bold'
-                  }}>
-                    DEBUG: Tenants found: {tenancy.tenants?.length || 0}
-                  </div>
-
                   {/* Tenants in this tenancy - Clickable with Edit */}
                   {tenancy.tenants && tenancy.tenants.length > 0 ? (
-                    <div className="tenant-list" style={{ border: '2px solid red' }}>
-                      {console.log('Rendering tenant list with', tenancy.tenants.length, 'tenants')}
-                      {tenancy.tenants.map(tenant => {
-                        console.log('Rendering tenant:', tenant.id, tenant.first_name, tenant.last_name);
-                        return (
+                    <div className="tenant-list">
+                      {tenancy.tenants.map(tenant => (
                         <div 
                           key={tenant.id} 
                           className="tenant-item"
-                          style={{ border: '1px solid blue', margin: '4px 0' }}
                         >
                           <div className="tenant-info" onClick={() => navigate(`/tenants?highlight=${tenant.id}`)}>
                             <span className="tenant-name">
@@ -375,26 +344,16 @@ function PropertyDetail() {
                             ✏️ Edit
                           </button>
                         </div>
-                        );
-                      })}
+                      ))}
                     </div>
                   ) : (
-                    <div style={{
-                      background: '#fbbf24',
-                      color: '#92400e',
-                      padding: '8px',
-                      margin: '8px 0',
-                      borderRadius: '4px',
-                      fontSize: '12px'
-                    }}>
-                      DEBUG: No tenants in this tenancy
-                    </div>
+                    <p>No tenants assigned</p>
                   )}
 
                   {/* Document Upload for this tenancy */}
                   <DocumentUpload 
                     tenancyId={tenancy.id}
-                    onUploadComplete={() => console.log('Document uploaded')}
+                    onUploadComplete={() => {}}
                   />
                 </div>
               ))

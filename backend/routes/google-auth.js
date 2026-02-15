@@ -17,7 +17,7 @@ function getSupabase() {
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://property-crm-live.onrender.com/api/google/callback';
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://property-crm-api-8t0r.onrender.com/api/google/callback';
 
 // Generate Google OAuth URL - returns URL for frontend to redirect to
 router.get('/auth-url', async (req, res) => {

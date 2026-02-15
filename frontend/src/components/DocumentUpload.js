@@ -71,17 +71,21 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
   };
 
   const handleConnectGoogle = async () => {
+    alert('BUTTON CLICKED! Token check starting...');
     try {
       const token = localStorage.getItem('token');
+      alert('Token found: ' + (token ? 'YES' : 'NO'));
       if (!token) {
         alert('Please log in first');
         return;
       }
       
+      alert('Fetching auth URL...');
       // Get auth URL from backend
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      alert('Auth URL received: ' + (response.data.authUrl ? 'YES' : 'NO'));
       
       if (!response.data.authUrl) {
         alert('Could not get Google auth URL');

@@ -172,23 +172,29 @@ function PropertyDetail() {
   const connectGoogleDrive = async () => {
     try {
       const token = localStorage.getItem('token');
+      const tokenPreview = token ? token.substring(0, 10) + '...' : 'NOT FOUND';
+      
+      alert('Token from localStorage: ' + tokenPreview);
       
       if (!token) {
-        alert('Please log in first');
+        alert('ERROR: No token in localStorage. Please log out and log in again.');
         return;
       }
       
-      // Show loading
-      alert('Connecting to Google Drive...');
+      alert('Token found, making API request...');
       
       const response = await axios.get(`${API_URL}/api/google/auth-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      alert('API response received: ' + (response.data ? 'yes' : 'no'));
+      
       if (!response.data.authUrl) {
-        alert('No auth URL received from server');
+        alert('No auth URL received from server. Response: ' + JSON.stringify(response.data));
         return;
       }
+      
+      alert('Auth URL length: ' + response.data.authUrl.length);
       
       // Open Google OAuth in popup
       const popup = window.open(
@@ -202,6 +208,8 @@ function PropertyDetail() {
         return;
       }
 
+      alert('Popup opened successfully!');
+
       // Poll for popup closure
       const pollTimer = setInterval(() => {
         if (popup.closed) {
@@ -211,7 +219,7 @@ function PropertyDetail() {
       }, 500);
     } catch (error) {
       const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
-      alert('Google Drive Error: ' + errorMsg);
+      alert('API Error: ' + errorMsg);
     }
   };
 

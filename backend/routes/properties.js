@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const { updateTenancyStatuses } = require('../utils/tenancy-helpers');
 
 // GET all properties for authenticated landlord
 router.get('/', async (req, res) => {
   try {
+    // Auto-update tenancy statuses before returning
+    await updateTenancyStatuses(req.landlord_id);
+    
     console.log('Fetching properties for landlord:', req.landlord_id);
     
     const { data: properties, error } = await req.supabase
@@ -55,6 +59,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Auto-update tenancy statuses before returning
+    await updateTenancyStatuses(req.landlord_id);
     
     // Property details
     const { data: property, error: propertyError } = await req.supabase

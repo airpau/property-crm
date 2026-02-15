@@ -269,22 +269,24 @@ function PropertyDetail() {
                             </span>
                           </div>
                           <button 
-                            className="edit-tenant-btn"
                             onClick={(e) => handleEditTenant(tenant, e)}
                             style={{
-                              padding: '8px 12px !important',
-                              background: '#4f46e5 !important',
-                              color: 'white !important',
-                              border: '2px solid white !important',
-                              borderRadius: '6px',
-                              fontSize: '14px',
+                              padding: '10px 16px',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: '3px solid #000',
+                              borderRadius: '8px',
+                              fontSize: '16px',
+                              fontWeight: 'bold',
                               cursor: 'pointer',
-                              marginLeft: '8px',
-                              display: 'inline-block',
-                              minWidth: '60px'
+                              marginLeft: '10px',
+                              display: 'block',
+                              minWidth: '80px',
+                              boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                              zIndex: 1000
                             }}
                           >
-                            ✏️ Edit
+                            ✏️ EDIT
                           </button>
                         </div>
                         );

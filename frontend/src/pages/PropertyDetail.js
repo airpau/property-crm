@@ -94,9 +94,9 @@ function PropertyDetail() {
           }
         });
         
-        // Filter to pending/late payments only (not paid)
+        // Filter to LATE payments only (past due date, not paid)
         const pendingPayments = (paymentsRes.data || [])
-          .filter(p => p.status === 'pending' || p.status === 'late')
+          .filter(p => p.status === 'late')
           .map(payment => ({
             tenantName: payment.tenants?.map(t => `${t.first_name} ${t.last_name}`).join(', ') || 'Unknown',
             amount: payment.amount_due,

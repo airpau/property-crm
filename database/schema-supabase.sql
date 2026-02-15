@@ -510,3 +510,156 @@ CREATE TRIGGER update_compliance_certificates_updated_at BEFORE UPDATE ON compli
 
 CREATE TRIGGER update_reminders_updated_at BEFORE UPDATE ON reminders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- GOOGLE DRIVE INTEGRATION TABLES
+-- ============================================
+
+-- Store Google Drive folder mappings for properties
+CREATE TABLE property_drive_folders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+    folder_id VARCHAR(255) NOT NULL, -- Google Drive folder ID
+    folder_name VARCHAR(255) NOT NULL, -- Display name
+    folder_path TEXT, -- Full path for reference
+    is_default BOOLEAN DEFAULT false, -- Is this the default property folder?
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE property_drive_folders ENABLE ROW LEVEL SECURITY;
+
+-- Users can only see their own property folders
+CREATE POLICY "property_drive_folders_select" ON property_drive_folders
+    FOR SELECT USING (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "property_drive_folders_insert" ON property_drive_folders
+    FOR INSERT WITH CHECK (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "property_drive_folders_update" ON property_drive_folders
+    FOR UPDATE USING (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "property_drive_folders_delete" ON property_drive_folders
+    FOR DELETE USING (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+-- Store document references linked to Drive files
+CREATE TABLE property_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+    tenancy_id UUID REFERENCES tenancies(id) ON DELETE SET NULL, -- Optional link to tenancy
+    tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL, -- Optional link to tenant
+    drive_file_id VARCHAR(255) NOT NULL, -- Google Drive file ID
+    drive_file_name VARCHAR(255) NOT NULL,
+    drive_file_url TEXT, -- Direct link to file
+    drive_folder_id VARCHAR(255), -- Parent folder ID
+    file_type VARCHAR(100), -- MIME type or category
+    file_size BIGINT, -- Bytes
+    upload_date TIMESTAMP,
+    description TEXT,
+    category VARCHAR(100), -- e.g., "tenancy_agreement", "inspection", "invoice"
+    uploaded_by UUID REFERENCES landlords(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE property_documents ENABLE ROW LEVEL SECURITY;
+
+-- Users can only see their own documents
+CREATE POLICY "property_documents_select" ON property_documents
+    FOR SELECT USING (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "property_documents_insert" ON property_documents
+    FOR INSERT WITH CHECK (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "property_documents_update" ON property_documents
+    FOR UPDATE USING (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "property_documents_delete" ON property_documents
+    FOR DELETE USING (
+        property_id IN (
+            SELECT id FROM properties WHERE landlord_id = auth.uid()
+        )
+    );
+
+-- Store Google OAuth tokens (securely)
+CREATE TABLE google_drive_tokens (
+    landlord_id UUID PRIMARY KEY REFERENCES landlords(id) ON DELETE CASCADE,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    token_expires_at TIMESTAMP NOT NULL,
+    drive_email VARCHAR(255), -- Google account email
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE google_drive_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Users can only see their own tokens
+CREATE POLICY "drive_tokens_select_own" ON google_drive_tokens
+    FOR SELECT USING (landlord_id = auth.uid());
+
+CREATE POLICY "drive_tokens_insert_own" ON google_drive_tokens
+    FOR INSERT WITH CHECK (landlord_id = auth.uid());
+
+CREATE POLICY "drive_tokens_update_own" ON google_drive_tokens
+    FOR UPDATE USING (landlord_id = auth.uid());
+
+CREATE POLICY "drive_tokens_delete_own" ON google_drive_tokens
+    FOR DELETE USING (landlord_id = auth.uid());
+
+-- ============================================
+-- GOOGLE DRIVE INDEXES
+-- ============================================
+
+CREATE INDEX idx_property_drive_folders_property ON property_drive_folders(property_id);
+CREATE INDEX idx_property_drive_folders_folder ON property_drive_folders(folder_id);
+
+CREATE INDEX idx_property_documents_property ON property_documents(property_id);
+CREATE INDEX idx_property_documents_tenancy ON property_documents(tenancy_id);
+CREATE INDEX idx_property_documents_tenant ON property_documents(tenant_id);
+CREATE INDEX idx_property_documents_category ON property_documents(category);
+CREATE INDEX idx_property_documents_uploaded ON property_documents(upload_date);
+
+-- ============================================
+-- GOOGLE DRIVE TRIGGERS
+-- ============================================
+
+CREATE TRIGGER update_property_drive_folders_updated_at BEFORE UPDATE ON property_drive_folders
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_property_documents_updated_at BEFORE UPDATE ON property_documents
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_google_drive_tokens_updated_at BEFORE UPDATE ON google_drive_tokens
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

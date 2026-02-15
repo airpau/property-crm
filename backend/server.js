@@ -10,6 +10,7 @@ const propertiesRouter = require('./routes/properties');
 const tenantsRouter = require('./routes/tenants');
 const tenanciesRouter = require('./routes/tenancies');
 const rentPaymentsRouter = require('./routes/rent-payments');
+const driveDocumentsRouter = require('./routes/drive-documents');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,6 +45,7 @@ app.use('/api/properties', authMiddleware, propertiesRouter);
 app.use('/api/tenants', authMiddleware, tenantsRouter);
 app.use('/api/tenancies', authMiddleware, tenanciesRouter);
 app.use('/api/rent-payments', authMiddleware, rentPaymentsRouter);
+app.use('/api/drive', authMiddleware, driveDocumentsRouter);
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {

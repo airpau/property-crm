@@ -4,6 +4,8 @@ const router = express.Router();
 // GET all properties for authenticated landlord
 router.get('/', async (req, res) => {
   try {
+    console.log('Fetching properties for landlord:', req.landlord_id);
+    
     const { data: properties, error } = await req.supabase
       .from('properties')
       .select(`
@@ -21,7 +23,12 @@ router.get('/', async (req, res) => {
       .is('deleted_at', null)
       .order('name', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
+    console.log('Found properties:', properties?.length || 0);
 
     // Format response with counts and monthly income
     const formattedProperties = properties.map(p => {

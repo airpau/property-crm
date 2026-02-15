@@ -45,8 +45,6 @@ router.post('/properties/:propertyId/folders', async (req, res) => {
         folder_name,
         folder_path,
         is_default: is_default || false
-      }, {
-        onConflict: 'property_id,folder_id'
       })
       .select()
       .single();
@@ -103,8 +101,7 @@ router.post('/properties/:propertyId/documents', async (req, res) => {
       tenant_id
     } = req.body;
 
-    // Get user from auth
-    const userId = req.user?.id; // Set by auth middleware
+    const userId = req.user?.id;
 
     const { data, error } = await supabase
       .from('property_documents')
@@ -123,7 +120,7 @@ router.post('/properties/:propertyId/documents', async (req, res) => {
         category,
         uploaded_by: userId
       })
-      .select()`
+      .select()
       .single();
 
     if (error) throw error;
@@ -150,108 +147,15 @@ router.delete('/documents/:documentId', async (req, res) => {
   }
 });
 
-// Get Drive token for user (if exists)
-router.get('/drive-token', async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    
-    const { data: token, error } = await supabase
-      .from('google_drive_tokens')
-      .select('*')
-      .eq('landlord_id', userId)
-      .single();
-
-    if (error && error.code !== 'PGRST116') throw error;
-    
-    if (token && new Date(token.token_expires_at) > new Date()) {
-      res.json({ connected: true, email: token.drive_email });
-    } else {
-      res.json({ connected: false });
-    }
-  } catch (error) {
-    console.error('Error checking Drive token:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Save Drive token after OAuth
-router.post('/drive-token', async (req, res) => {
-  try {
-    const { access_token, refresh_token, expires_in, email } = req.body;
-    const userId = req.user?.id;
-    
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + expires_in);
-
-    const { data, error } = await supabase
-      .from('google_drive_tokens')
-      .upsert({
-        landlord_id: userId,
-        access_token,
-        refresh_token,
-        token_expires_at: expiresAt.toISOString(),
-        drive_email: email
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.json({ success: true, email });
-  } catch (error) {
-    console.error('Error saving Drive token:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Revoke Drive access
-router.delete('/drive-token', async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    
-    await supabase
-      .from('google_drive_tokens')
-      .delete()
-      .eq('landlord_id', userId);
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error revoking Drive token:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Delete a folder mapping
-router.delete('/drive-folders/:folderId', async (req, res) => {
+router.delete('/folders/:folderId', async (req, res) => {
   try {
-    const userId = req.user?.id;
-    
-    // Verify user owns this folder mapping
-    const { data: folder, error: fetchError } = await supabase
-      .from('property_drive_folders')
-      .select('property_id')
-      .eq('id', req.params.folderId)
-      .single();
-
-    if (fetchError || !folder) {
-      return res.status(404).json({ error: 'Folder not found' });
-    }
-
-    // Verify user owns the property
-    const { data: property } = await supabase
-      .from('properties')
-      .select('landlord_id')
-      .eq('id', folder.property_id)
-      .single();
-
-    if (!property || property.landlord_id !== userId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
-
-    await supabase
+    const { error } = await supabase
       .from('property_drive_folders')
       .delete()
       .eq('id', req.params.folderId);
 
+    if (error) throw error;
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting folder:', error);

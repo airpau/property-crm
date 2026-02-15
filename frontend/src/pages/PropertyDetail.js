@@ -583,6 +583,72 @@ function PropertyDetail() {
               ))
             )}
           </div>
+
+          {/* Pending Tenancies Section */}
+          {property.tenancies?.filter(t => t.status === 'pending').length > 0 && (
+            <>
+              <h4 style={{ margin: '24px 0 16px', color: '#6b7280', fontSize: '0.9rem' }}>
+                ⏳ UPCOMING / PENDING ({property.tenancies?.filter(t => t.status === 'pending').length})
+              </h4>
+              <div className="tenancy-list">
+                {property.tenancies?.filter(t => t.status === 'pending').map(tenancy => (
+                  <div key={tenancy.id} className={`tenancy-card ${tenancy.status}`} style={{ opacity: 0.85, borderLeft: '4px solid #f59e0b' }}>
+                    <div className="tenancy-header">
+                      <span className="tenancy-title">
+                        {tenancy.tenants?.length > 0 
+                          ? tenancy.tenants.map(t => `${t.first_name} ${t.last_name}`).join(', ') + 
+                            (tenancy.room_number ? ` - Room ${tenancy.room_number}` : '')
+                          : (tenancy.room_number ? `Room ${tenancy.room_number}` : 'Unassigned')
+                        }
+                      </span>
+                      <span className={`tenancy-status ${tenancy.status}`} style={{ background: '#f59e0b', color: 'white' }}>
+                        MOVES IN {new Date(tenancy.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    
+                    <div className="tenancy-details">
+                      <div className="tenancy-detail">
+                        <span className="tenancy-detail-label">Monthly Rent</span>
+                        <span className="tenancy-detail-value amount">£{tenancy.rent_amount}</span>
+                      </div>
+                      <div className="tenancy-detail">
+                        <span className="tenancy-detail-label">First Payment Due</span>
+                        <span className="tenancy-detail-value" style={{ color: '#f59e0b', fontWeight: 600 }}>
+                          {new Date(tenancy.start_date).toLocaleDateString('en-GB')} (Move-in day)
+                        </span>
+                      </div>
+                      <div className="tenancy-detail">
+                        <span className="tenancy-detail-label">Rent Due Day</span>
+                        <span className="tenancy-detail-value">
+                          {tenancy.rent_due_day ? 
+                            `${tenancy.rent_due_day}${['st','nd','rd'][tenancy.rent_due_day-1] || 'th'} of month` : 
+                            'Not set'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {tenancy.tenants && tenancy.tenants.length > 0 && (
+                      <div className="tenant-list">
+                        {tenancy.tenants.map(tenant => (
+                          <div key={tenant.id} className="tenant-item">
+                            <div className="tenant-info">
+                              <span className="tenant-name">
+                                {tenant.first_name} {tenant.last_name}
+                                {tenant.is_primary && <span className="tenant-badge">PRIMARY</span>}
+                              </span>
+                              <span className="tenant-contact">
+                                {tenant.phone || tenant.email || 'No contact'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Upcoming Payments Section */}

@@ -38,6 +38,7 @@ router.get('/', async (req, res) => {
     const formattedProperties = await Promise.all(properties.map(async (p) => {
       const activeTenancies = p.tenancies?.filter(t => t.status === 'active') || [];
       let monthlyIncome = activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
+      let saBookingRevenue = 0;
       const activeTenants = activeTenancies.reduce((count, t) => count + (t.tenancy_tenants?.length || 0), 0);
       
       // For SA properties, also include booking revenue for current month
@@ -55,15 +56,18 @@ router.get('/', async (req, res) => {
           .lte('check_in', monthEnd)
           .not('status', 'eq', 'cancelled');
         
-        const saRevenue = (saBookings || []).reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
-        monthlyIncome += saRevenue;
+        saBookingRevenue = (saBookings || []).reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
+        monthlyIncome += saBookingRevenue;
+        
+        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings = ${saBookings?.length || 0}, SA revenue = ${saBookingRevenue}`);
       }
 
       return {
         ...p,
         active_tenancies: activeTenancies.length,
         active_tenants: activeTenants,
-        monthly_income: monthlyIncome
+        monthly_income: monthlyIncome,
+        sa_booking_revenue: p.property_category === 'sa' ? saBookingRevenue : undefined
       };
     }));
 

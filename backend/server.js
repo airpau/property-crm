@@ -10,8 +10,20 @@ const propertiesRouter = require('./routes/properties');
 const tenantsRouter = require('./routes/tenants');
 const tenanciesRouter = require('./routes/tenancies');
 const rentPaymentsRouter = require('./routes/rent-payments');
-const driveDocumentsRouter = require('./routes/drive-documents');
-const googleAuthRouter = require('./routes/google-auth');
+
+// Only load Google Drive routes if env vars are set
+let driveDocumentsRouter, googleAuthRouter;
+try {
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    driveDocumentsRouter = require('./routes/drive-documents');
+    googleAuthRouter = require('./routes/google-auth');
+    console.log('✅ Google Drive routes loaded');
+  } else {
+    console.log('⚠️ Google Drive env vars not set, skipping Drive routes');
+  }
+} catch (err) {
+  console.error('Error loading Drive routes:', err.message);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,8 +58,14 @@ app.use('/api/properties', authMiddleware, propertiesRouter);
 app.use('/api/tenants', authMiddleware, tenantsRouter);
 app.use('/api/tenancies', authMiddleware, tenanciesRouter);
 app.use('/api/rent-payments', authMiddleware, rentPaymentsRouter);
-app.use('/api/drive', authMiddleware, driveDocumentsRouter);
-app.use('/api/google', authMiddleware, googleAuthRouter);
+
+// Conditionally mount Google Drive routes
+if (driveDocumentsRouter) {
+  app.use('/api/drive', authMiddleware, driveDocumentsRouter);
+}
+if (googleAuthRouter) {
+  app.use('/api/google', authMiddleware, googleAuthRouter);
+}
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {

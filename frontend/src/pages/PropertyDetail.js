@@ -38,6 +38,15 @@ function PropertyDetail() {
   // Expense tracking state
   const [expenses, setExpenses] = useState([]);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [editExpenseForm, setEditExpenseForm] = useState({
+    category: '',
+    description: '',
+    amount: '',
+    expense_date: '',
+    frequency: '',
+    is_tax_deductible: false
+  });
   const [expenseSummary, setExpenseSummary] = useState({
     oneOff: 0,
     monthlyRecurring: 0,
@@ -214,6 +223,46 @@ function PropertyDetail() {
       setSaForecast(forecastRes.data || []);
     } catch (error) {
       console.error('Error fetching SA bookings:', error);
+    }
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setEditExpenseForm({
+      category: expense.category,
+      description: expense.description || '',
+      amount: expense.amount,
+      expense_date: expense.expense_date,
+      frequency: expense.frequency,
+      is_tax_deductible: expense.is_tax_deductible || false
+    });
+  };
+
+  const handleCloseEditExpense = () => {
+    setEditingExpense(null);
+    setEditExpenseForm({
+      category: '',
+      description: '',
+      amount: '',
+      expense_date: '',
+      frequency: '',
+      is_tax_deductible: false
+    });
+  };
+
+  const handleSaveExpense = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/api/expenses/${editingExpense.id}`,
+        editExpenseForm,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      handleCloseEditExpense();
+      fetchExpenses();
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      alert('Failed to save expense');
     }
   };
 
@@ -1194,7 +1243,7 @@ function PropertyDetail() {
                 <div key={expense.id} className={`expense-item ${expense.frequency}`}>
                   <div className="expense-info">
                     <div className="expense-category">
-                      {expense.category.replace('_', ' ').toUpperCase()}
+                      {expense.category.replace(/_/g, ' ').toUpperCase()}
                     </div>
                     {expense.description && (
                       <div className="expense-description">{expense.description}</div>
@@ -1207,6 +1256,12 @@ function PropertyDetail() {
                   <div className="expense-amount">
                     <div className="amount">£{parseFloat(expense.amount).toLocaleString()}</div>
                     <div className="frequency">{expense.frequency === 'one-off' ? 'One-off' : 'Recurring'}</div>
+                    <button
+                      className="btn-secondary edit-expense-btn"
+                      onClick={() => handleEditExpense(expense)}
+                    >
+                      Edit
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1295,6 +1350,109 @@ function PropertyDetail() {
             fetchSABookings(); // Refresh SA booking data
           }}
         />
+      )}
+
+      {/* Edit Expense Modal */}
+      {editingExpense && (
+        <div className="modal-overlay" onClick={handleCloseEditExpense}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3 style={{color: '#dc2626', marginBottom: '20px'}}>Edit Expense</h3>
+            
+            <div className="form-group">
+              <label>Category</label>
+              <select
+                value={editExpenseForm.category}
+                onChange={(e) => setEditExpenseForm({...editExpenseForm, category: e.target.value})}
+              >
+                <option value="mortgage">Mortgage</option>
+                <option value="council_tax">Council Tax</option>
+                <option value="utilities">Utilities</option>
+                <option value="insurance">Insurance</option>
+                <option value="repairs">Repairs</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="cleaning">Cleaning</option>
+                <option value="furnishings">Furnishings</option>
+                <option value="agency_fees">Agency Fees</option>
+                <option value="legal">Legal</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={editExpenseForm.description}
+                onChange={(e) => setEditExpenseForm({...editExpenseForm, description: e.target.value})}
+                placeholder="e.g., Boiler repair"
+              />
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label>Amount (£) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editExpenseForm.amount}
+                  onChange={(e) => setEditExpenseForm({...editExpenseForm, amount: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  value={editExpenseForm.expense_date}
+                  onChange={(e) => setEditExpenseForm({...editExpenseForm, expense_date: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label>Frequency</label>
+                <select
+                  value={editExpenseForm.frequency}
+                  onChange={(e) => setEditExpenseForm({...editExpenseForm, frequency: e.target.value})}
+                >
+                  <option value="one-off">One-off</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+              
+              <div className="form-group checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={editExpenseForm.is_tax_deductible}
+                    onChange={(e) => setEditExpenseForm({...editExpenseForm, is_tax_deductible: e.target.checked})}
+                  />
+                  Tax Deductible
+                </label>
+              </div>
+            </div>
+            
+            <div className="modal-actions" style={{marginTop: '24px'}}>
+              <button 
+                className="btn-primary"
+                onClick={handleSaveExpense}
+              >
+                Save Changes
+              </button>
+              <button 
+                className="btn-secondary"
+                onClick={handleCloseEditExpense}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

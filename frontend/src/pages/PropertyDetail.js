@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DocumentUpload from '../components/DocumentUpload';
+import DriveFolderMapping from '../components/DriveFolderMapping';
 import './PropertyDetail.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -16,10 +17,49 @@ function PropertyDetail() {
   const [editingTenant, setEditingTenant] = useState(null);
   const [editForm, setEditForm] = useState({ email: '', phone: '' });
   const [saving, setSaving] = useState(false);
+  
+  // Drive integration state
+  const [driveConnected, setDriveConnected] = useState(false);
+  const [driveEmail, setDriveEmail] = useState(null);
+  const [activeDocumentsTab, setActiveDocumentsTab] = useState('compliance');
+  const [propertyDocuments, setPropertyDocuments] = useState([]);
+  const [complianceDocuments, setComplianceDocuments] = useState([]);
 
   useEffect(() => {
     fetchProperty();
+    checkDriveStatus();
+    loadPropertyDocuments();
   }, [id]);
+
+  const checkDriveStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/google/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDriveConnected(response.data.connected);
+      setDriveEmail(response.data.email);
+    } catch (error) {
+      setDriveConnected(false);
+    }
+  };
+
+  const loadPropertyDocuments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/drive/properties/${id}/documents`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const docs = response.data || [];
+      // Separate compliance and property docs
+      const compliance = docs.filter(d => d.category === 'compliance');
+      const property = docs.filter(d => ['mortgage', 'legal', 'planning', 'other'].includes(d.category));
+      setComplianceDocuments(compliance);
+      setPropertyDocuments(property);
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    }
+  };
 
   const fetchProperty = async () => {
     try {
@@ -124,6 +164,50 @@ function PropertyDetail() {
 
   const handleCloseModal = () => {
     setEditingTenant(null);
+  };
+
+  // Google Drive connection
+  const connectGoogleDrive = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/google/auth-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Open Google OAuth in popup
+      const popup = window.open(
+        response.data.authUrl,
+        'GoogleDriveAuth',
+        'width=500,height=600,scrollbars=yes'
+      );
+
+      // Poll for popup closure
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          checkDriveStatus();
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Error getting auth URL:', error);
+      alert('Error connecting to Google Drive. Please try again.');
+    }
+  };
+
+  const disconnectGoogleDrive = async () => {
+    if (!window.confirm('Disconnect Google Drive?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/api/google/disconnect`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDriveConnected(false);
+      setDriveEmail(null);
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      alert('Error disconnecting Google Drive.');
+    }
   };
 
   if (loading) return <div className="loading-spinner">Loading property details...</div>;
@@ -348,39 +432,214 @@ function PropertyDetail() {
           </div>
         </div>
 
-        {/* Compliance Section */}
-        <div className="section-card" style={{ gridColumn: '1 / -1' }}>
-          <h3>📋 Compliance & Certificates</h3>
-          {(!property.compliance || property.compliance.length === 0) ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">📋</div>
-              <p>No compliance certificates on file</p>
+        {/* Document Management Section */}
+        <div className="section-card documents-section" style={{ gridColumn: '1 / -1' }}>
+          <div className="documents-header">
+            <h3>📁 Document Management</h3>
+            <div className="drive-status">
+              {driveConnected ? (
+                <span className="drive-connected">
+                  ✅ Drive: {driveEmail}
+                  <button onClick={disconnectGoogleDrive} className="disconnect-btn">Disconnect</button>
+                </span>
+              ) : (
+                <button onClick={connectGoogleDrive} className="connect-drive-btn">
+                  🔗 Connect Google Drive
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="compliance-grid">
-              {property.compliance.map(cert => {
-                const expiryDate = new Date(cert.expiry_date);
-                const today = new Date();
-                const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-                const status = daysUntilExpiry < 0 ? 'expired' : daysUntilExpiry <= 30 ? 'expiring' : 'valid';
-                
-                return (
-                  <div key={cert.id} className={`compliance-card ${status}`}>
-                    <div className="compliance-header">
-                      <span className="compliance-type">{cert.certificate_type}</span>
-                      <span className={`compliance-status-badge ${status}`}>
-                        {status === 'expired' ? 'EXPIRED' : daysUntilExpiry <= 30 ? `EXPIRES IN ${daysUntilExpiry} DAYS` : 'VALID'}
-                      </span>
-                    </div>
-                    <div className="compliance-dates">
-                      <p>Expires: <strong>{expiryDate.toLocaleDateString('en-GB')}</strong></p>
-                      {cert.renewal_reminder_date && (
-                        <p>Reminder: {new Date(cert.renewal_reminder_date).toLocaleDateString('en-GB')}</p>
-                      )}
-                    </div>
+          </div>
+
+          {/* Document Category Tabs */}
+          <div className="document-tabs">
+            <button 
+              className={`tab ${activeDocumentsTab === 'compliance' ? 'active' : ''}`}
+              onClick={() => setActiveDocumentsTab('compliance')}
+            >
+              📋 Compliance
+            </button>
+            <button 
+              className={`tab ${activeDocumentsTab === 'property' ? 'active' : ''}`}
+              onClick={() => setActiveDocumentsTab('property')}
+            >
+              🏠 Property Documents
+            </button>
+            {property.tenancies?.some(t => t.status === 'active') && (
+              <button 
+                className={`tab ${activeDocumentsTab === 'tenancy' ? 'active' : ''}`}
+                onClick={() => setActiveDocumentsTab('tenancy')}
+              >
+                👥 Tenancy Documents
+              </button>
+            )}
+          </div>
+
+          {/* Compliance Documents Tab */}
+          {activeDocumentsTab === 'compliance' && (
+            <div className="document-category">
+              <div className="category-header">
+                <h4>Compliance Certificates</h4>
+                <p className="category-desc">EPC, Gas Safety, Electrical, Fire Safety, etc.</p>
+                {driveConnected && (
+                  <DriveFolderMapping 
+                    propertyId={id} 
+                    propertyName={property.name || property.address_line_1}
+                  />
+                )}
+              </div>
+              
+              {complianceDocuments.length === 0 ? (
+                <div className="empty-documents">
+                  <div className="upload-prompt">
+                    <p>No compliance certificates uploaded yet.</p>
+                    {driveConnected ? (
+                      <DocumentUpload 
+                        propertyId={id}
+                        category="compliance"
+                        allowedTypes={['.pdf', '.jpg', '.png']}
+                        onUploadComplete={loadPropertyDocuments}
+                      />
+                    ) : (
+                      <p className="hint">Connect Google Drive to upload documents</p>
+                    )}
                   </div>
-                );
-              })}
+                </div>
+              ) : (
+                <div className="documents-list">
+                  {complianceDocuments.map(doc => (
+                    <div key={doc.id} className="document-item">
+                      <span className="doc-icon">📄</span>
+                      <div className="doc-info">
+                        <span className="doc-name">{doc.drive_file_name}</span>
+                        <span className="doc-date">
+                          {new Date(doc.upload_date).toLocaleDateString('en-GB')}
+                        </span>
+                      </div>
+                      <a 
+                        href={doc.drive_file_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="view-btn"
+                      >
+                        View
+                      </a>
+                    </div>
+                  ))}
+                  {driveConnected && (
+                    <DocumentUpload 
+                      propertyId={id}
+                      category="compliance"
+                      allowedTypes={['.pdf', '.jpg', '.png']}
+                      onUploadComplete={loadPropertyDocuments}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Property Documents Tab */}
+          {activeDocumentsTab === 'property' && (
+            <div className="document-category">
+              <div className="category-header">
+                <h4>Property Documents</h4>
+                <p className="category-desc">Mortgage statements, agreements, planning, architectural drawings</p>
+              </div>
+              
+              <div className="document-subcategories">
+                <div className="subcategory">
+                  <h5>🏦 Mortgage & Finance</h5>
+                  <p>Mortgage agreements, statements, valuation reports</p>
+                  {driveConnected && (
+                    <DocumentUpload 
+                      propertyId={id}
+                      category="mortgage"
+                      allowedTypes={['.pdf', '.jpg', '.png']}
+                      onUploadComplete={loadPropertyDocuments}
+                    />
+                  )}
+                </div>
+                
+                <div className="subcategory">
+                  <h5>⚖️ Legal Documents</h5>
+                  <p>Deeds, contracts, insurance policies</p>
+                  {driveConnected && (
+                    <DocumentUpload 
+                      propertyId={id}
+                      category="legal"
+                      allowedTypes={['.pdf', '.jpg', '.png']}
+                      onUploadComplete={loadPropertyDocuments}
+                    />
+                  )}
+                </div>
+                
+                <div className="subcategory">
+                  <h5>📐 Planning & Drawings</h5>
+                  <p>Planning permission, architectural drawings, floor plans</p>
+                  {driveConnected && (
+                    <DocumentUpload 
+                      propertyId={id}
+                      category="planning"
+                      allowedTypes={['.pdf', '.jpg', '.png', '.dwg']}
+                      onUploadComplete={loadPropertyDocuments}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {propertyDocuments.length > 0 && (
+                <div className="documents-list">
+                  <h5>📂 All Property Documents</h5>
+                  {propertyDocuments.map(doc => (
+                    <div key={doc.id} className="document-item">
+                      <span className="doc-icon">📄</span>
+                      <div className="doc-info">
+                        <span className="doc-name">{doc.drive_file_name}</span>
+                        <span className="doc-category">{doc.category}</span>
+                        <span className="doc-date">
+                          {new Date(doc.upload_date).toLocaleDateString('en-GB')}
+                        </span>
+                      </div>
+                      <a 
+                        href={doc.drive_file_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="view-btn"
+                      >
+                        View
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tenancy Documents Tab */}
+          {activeDocumentsTab === 'tenancy' && (
+            <div className="document-category">
+              <h4>Tenancy Documents</h4>
+              <p>AST agreements, inventories, reference checks per tenancy</p>
+              
+              {property.tenancies?.filter(t => t.status === 'active').map(tenancy => (
+                <div key={tenancy.id} className="tenancy-docs-card">
+                  <div className="tenancy-docs-header">
+                    <h5>
+                      {tenancy.tenants?.map(t => `${t.first_name} ${t.last_name}`).join(', ') || 'Unnamed Tenancy'}
+                      {tenancy.room_number && ` - Room ${tenancy.room_number}`}
+                    </h5>
+                    <span className="tenancy-status-badge">{tenancy.status}</span>
+                  </div>
+                  {driveConnected && (
+                    <DocumentUpload 
+                      tenancyId={tenancy.id}
+                      category="tenancy"
+                      allowedTypes={['.pdf', '.jpg', '.png']}
+                      onUploadComplete={loadPropertyDocuments}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

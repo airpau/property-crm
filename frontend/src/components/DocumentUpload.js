@@ -24,7 +24,7 @@ const loadGoogleDriveAPI = () => {
   });
 };
 
-function DocumentUpload({ propertyId, tenancyId, tenantId, onUploadComplete }) {
+function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedTypes, onUploadComplete }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -124,7 +124,8 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, onUploadComplete }) {
                 drive_folder_id: doc.parentId || defaultFolder?.folder_id,
                 file_type: doc.mimeType,
                 tenancy_id: tenancyId,
-                tenant_id: tenantId
+                tenant_id: tenantId,
+                category: category || 'other'
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -160,6 +161,7 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, onUploadComplete }) {
       formData.append('property_id', propertyId);
       if (tenancyId) formData.append('tenancy_id', tenancyId);
       if (tenantId) formData.append('tenant_id', tenantId);
+      if (category) formData.append('category', category);
 
       const response = await axios.post(
         `${API_URL}/api/drive/upload`,
@@ -171,6 +173,7 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, onUploadComplete }) {
           }
         }
       );
+    };
 
       if (response.data.success) {
         loadDocuments();

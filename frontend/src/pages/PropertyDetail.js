@@ -238,7 +238,7 @@ function PropertyDetail() {
       <div className="property-stats-grid">
         <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
           <h4>Monthly Rental Income</h4>
-          <div className="stat-value">£{totalMonthlyRent.toLocaleString()}</div>
+          <div className="stat-value">£{totalIncome.toLocaleString()}</div>
           <span className="card-action">View in Rent Tracker →</span>
         </div>
         <div className="stat-card">

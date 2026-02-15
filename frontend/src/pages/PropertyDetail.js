@@ -234,9 +234,22 @@ function PropertyDetail() {
                     )}
                   </div>
 
+                  {/* DEBUG BANNER - Remove after testing */}
+                  <div style={{
+                    background: '#ef4444',
+                    color: 'white',
+                    padding: '8px',
+                    margin: '8px 0',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    DEBUG: Tenants found: {tenancy.tenants?.length || 0}
+                  </div>
+
                   {/* Tenants in this tenancy - Clickable with Edit */}
-                  {tenancy.tenants && tenancy.tenants.length > 0 && (
-                    <div className="tenant-list">
+                  {tenancy.tenants && tenancy.tenants.length > 0 ? (
+                    <div className="tenant-list" style={{ border: '2px solid red' }}>
                       {console.log('Rendering tenant list with', tenancy.tenants.length, 'tenants')}
                       {tenancy.tenants.map(tenant => {
                         console.log('Rendering tenant:', tenant.id, tenant.first_name, tenant.last_name);
@@ -244,6 +257,7 @@ function PropertyDetail() {
                         <div 
                           key={tenant.id} 
                           className="tenant-item"
+                          style={{ border: '1px solid blue', margin: '4px 0' }}
                         >
                           <div className="tenant-info" onClick={() => navigate(`/tenants?highlight=${tenant.id}`)}>
                             <span className="tenant-name">
@@ -258,14 +272,16 @@ function PropertyDetail() {
                             className="edit-tenant-btn"
                             onClick={(e) => handleEditTenant(tenant, e)}
                             style={{
-                              padding: '8px 12px',
-                              background: '#4f46e5',
-                              color: 'white',
-                              border: 'none',
+                              padding: '8px 12px !important',
+                              background: '#4f46e5 !important',
+                              color: 'white !important',
+                              border: '2px solid white !important',
                               borderRadius: '6px',
                               fontSize: '14px',
                               cursor: 'pointer',
-                              marginLeft: '8px'
+                              marginLeft: '8px',
+                              display: 'inline-block',
+                              minWidth: '60px'
                             }}
                           >
                             ✏️ Edit
@@ -273,6 +289,17 @@ function PropertyDetail() {
                         </div>
                         );
                       })}
+                    </div>
+                  ) : (
+                    <div style={{
+                      background: '#fbbf24',
+                      color: '#92400e',
+                      padding: '8px',
+                      margin: '8px 0',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      DEBUG: No tenants in this tenancy
                     </div>
                   )}
 

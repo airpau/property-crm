@@ -43,7 +43,7 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `${API_URL}/api/properties/${propertyId}/documents`,
+        `${API_URL}/api/drive/properties/${propertyId}/documents`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDocuments(response.data || []);
@@ -58,7 +58,7 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `${API_URL}/api/properties/${propertyId}/folders`,
+        `${API_URL}/api/drive/properties/${propertyId}/folders`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const folders = response.data || [];
@@ -116,7 +116,7 @@ function DocumentUpload({ propertyId, tenancyId, tenantId, category, allowedType
             // Save document reference to backend
             const token = localStorage.getItem('token');
             await axios.post(
-              `${API_URL}/api/properties/${propertyId}/documents`,
+              `${API_URL}/api/drive/properties/${propertyId}/documents`,
               {
                 drive_file_id: doc.id,
                 drive_file_name: doc.name,

@@ -22,7 +22,7 @@ function DriveFolderMapping({ propertyId, propertyName, onFolderMapped }) {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `${API_URL}/api/properties/${propertyId}/folders`,
+        `${API_URL}/api/drive/properties/${propertyId}/folders`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setFolders(response.data || []);
@@ -65,7 +65,7 @@ function DriveFolderMapping({ propertyId, propertyName, onFolderMapped }) {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${API_URL}/api/properties/${propertyId}/folders`,
+        `${API_URL}/api/drive/properties/${propertyId}/folders`,
         {
           folder_id: folderId,
           folder_name: displayName,
@@ -89,7 +89,7 @@ function DriveFolderMapping({ propertyId, propertyName, onFolderMapped }) {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${API_URL}/api/properties/${propertyId}/folders`,
+        `${API_URL}/api/drive/properties/${propertyId}/folders`,
         {
           folder_id: folderId,
           is_default: true
@@ -109,7 +109,7 @@ function DriveFolderMapping({ propertyId, propertyName, onFolderMapped }) {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `${API_URL}/api/drive-folders/${folderId}`,
+        `${API_URL}/api/drive/folders/${folderId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       loadFolders();

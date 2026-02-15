@@ -566,11 +566,30 @@ function PropertyDetail() {
 
   const totalMonthlyRent = upcomingPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
   
-  // Calculate total rental income from active tenancies that have STARTED
+  // Get current month for SA calculations
   const today = new Date();
-  const totalIncome = property?.tenancies
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+  // Calculate SA booking revenue for current month
+  const monthlySARevenue = property?.property_category === 'sa' 
+    ? (saBookings || []).reduce((sum, booking) => {
+        if (booking.status === 'cancelled') return sum;
+        const checkIn = new Date(booking.check_in);
+        if (checkIn >= currentMonthStart && checkIn <= currentMonthEnd) {
+          return sum + (parseFloat(booking.net_revenue) || 0);
+        }
+        return sum;
+      }, 0)
+    : 0;
+  
+  // Calculate total rental income from active tenancies that have STARTED
+  const tenancyIncome = property?.tenancies
     ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)
     ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
+  
+  // Total income = tenancy income + SA booking revenue for this month
+  const totalIncome = tenancyIncome + monthlySARevenue;
 
   return (
     <div className="property-detail-container">
@@ -597,22 +616,50 @@ function PropertyDetail() {
 
       {/* Stats Grid */}
       <div className="property-stats-grid">
-        <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
-          <h4>Monthly Rental Income</h4>
-          <div className="stat-value">£{totalIncome.toLocaleString()}</div>
-          <span className="card-action">View in Rent Tracker →</span>
-        </div>
-        <div className="stat-card">
-          <h4>Active Tenancies</h4>
-          <div className="stat-value">{property.tenancies?.length || 0}</div>
-        </div>
-        <div className="stat-card clickable" onClick={() => window.location.href = '/tenants'}>
-          <h4>Total Tenants</h4>
-          <div className="stat-value">
-            {property.tenancies?.reduce((sum, t) => sum + (t.tenants?.length || 0), 0) || 0}
-          </div>
-          <span className="card-action">View All Tenants →</span>
-        </div>
+        {property?.property_category === 'sa' ? (
+          <>
+            <div className="stat-card income">
+              <h4>💰 Monthly SA Revenue</h4>
+              <div className="stat-value">£{monthlySARevenue.toLocaleString()}</div>
+              <span className="card-hint">{saBookings.filter(b => {
+                if (b.status === 'cancelled') return false;
+                const checkIn = new Date(b.check_in);
+                return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
+              }).length} bookings this month</span>
+            </div>
+            <div className="stat-card expense">
+              <h4>📉 Monthly Expenses</h4>
+              <div className="stat-value">£{expenseSummary.totalThisMonth.toLocaleString()}</div>
+              <span className="card-hint">This property</span>
+            </div>
+            <div className={`stat-card ${totalIncome - expenseSummary.totalThisMonth >= 0 ? 'profit' : 'loss'}`}>
+              <h4>{totalIncome - expenseSummary.totalThisMonth >= 0 ? '📈 Net Profit' : '📉 Net Loss'}</h4>
+              <div className="stat-value">
+                {totalIncome - expenseSummary.totalThisMonth >= 0 ? '+' : '-'}£{Math.abs(totalIncome - expenseSummary.totalThisMonth).toLocaleString()}
+              </div>
+              <span className="card-hint">Revenue − Expenses</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
+              <h4>Monthly Rental Income</h4>
+              <div className="stat-value">£{totalIncome.toLocaleString()}</div>
+              <span className="card-action">View in Rent Tracker →</span>
+            </div>
+            <div className="stat-card">
+              <h4>Active Tenancies</h4>
+              <div className="stat-value">{property.tenancies?.length || 0}</div>
+            </div>
+            <div className="stat-card clickable" onClick={() => window.location.href = '/tenants'}>
+              <h4>Total Tenants</h4>
+              <div className="stat-value">
+                {property.tenancies?.reduce((sum, t) => sum + (t.tenants?.length || 0), 0) || 0}
+              </div>
+              <span className="card-action">View All Tenants →</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Content Grid */}

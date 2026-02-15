@@ -105,6 +105,70 @@
   color: #111827;
 }
 
+/* SA Property Stat Card Variants */
+.stat-card.income {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: #10b981;
+}
+
+.stat-card.income h4 {
+  color: #059669;
+}
+
+.stat-card.income .stat-value {
+  color: #10b981;
+}
+
+.stat-card.expense {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  border-color: #ef4444;
+}
+
+.stat-card.expense h4 {
+  color: #dc2626;
+}
+
+.stat-card.expense .stat-value {
+  color: #ef4444;
+}
+
+.stat-card.profit {
+  background: linear-gradient(135deg, #ecfdf5 0%, #a7f3d0 100%);
+  border-color: #10b981;
+  border-width: 2px;
+}
+
+.stat-card.profit h4 {
+  color: #047857;
+}
+
+.stat-card.profit .stat-value {
+  color: #059669;
+  font-weight: 700;
+}
+
+.stat-card.loss {
+  background: linear-gradient(135deg, #fef2f2 0%, #fca5a5 100%);
+  border-color: #ef4444;
+  border-width: 2px;
+}
+
+.stat-card.loss h4 {
+  color: #b91c1c;
+}
+
+.stat-card.loss .stat-value {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.card-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 /* Content Grid */
 .property-content-grid {
   display: grid;

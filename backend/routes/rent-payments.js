@@ -170,7 +170,7 @@ router.post('/generate', async (req, res) => {
     const startOfMonth = new Date(year, monthNum - 1, 1);
     const endOfMonth = new Date(year, monthNum, 0);
 
-    // Get all active tenancies without payments for this month
+    // Get all active tenancies
     const { data: tenancies, error: tenancyError } = await req.supabase
       .from('tenancies')
       .select(`
@@ -178,8 +178,7 @@ router.post('/generate', async (req, res) => {
         landlord_id,
         property_id,
         rent_amount,
-        rent_due_day,
-        rent_payments:rent_payments(id)
+        rent_due_day
       `)
       .eq('landlord_id', req.landlord_id)
       .eq('status', 'active')
@@ -187,10 +186,25 @@ router.post('/generate', async (req, res) => {
 
     if (tenancyError) throw tenancyError;
 
+    // Get existing payments for this month
+    const monthStart = `${month}-01`;
+    const monthEnd = `${month}-${new Date(year, monthNum, 0).getDate()}`;
+    
+    const { data: existingPayments, error: paymentError } = await req.supabase
+      .from('rent_payments')
+      .select('tenancy_id')
+      .eq('landlord_id', req.landlord_id)
+      .gte('due_date', monthStart)
+      .lte('due_date', monthEnd);
+
+    if (paymentError) throw paymentError;
+
+    // Get set of tenancy IDs that already have payments this month
+    const tenancyIdsWithPayments = new Set((existingPayments || []).map(p => p.tenancy_id));
+
     // Filter out tenancies that already have payments this month
     const tenanciesNeedingPayments = (tenancies || []).filter(t => {
-      const existingPayments = t.rent_payments || [];
-      return existingPayments.length === 0; // Simplified check
+      return !tenancyIdsWithPayments.has(t.id);
     });
 
     if (tenanciesNeedingPayments.length === 0) {
@@ -215,7 +229,7 @@ router.post('/generate', async (req, res) => {
         property_id: t.property_id,
         due_date: dueDate.toISOString().split('T')[0],
         amount_due: t.rent_amount,
-        status: isLate ? 'pending' : 'pending',
+        status: isLate ? 'late' : 'pending',
         created_at: new Date().toISOString()
       };
     });

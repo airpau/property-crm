@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Angel.ai - AI-Powered Property Management</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+    }
+
+    /* Navigation */
+    .nav {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #4f46e5;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #6b7280;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #4f46e5;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-outline {
+      border: 2px solid #4f46e5;
+      color: #4f46e5;
+      background: transparent;
+    }
+
+    .btn-outline:hover {
+      background: #4f46e5;
+      color: white;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-premium {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-premium:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+      color: white;
+      padding: 10rem 2rem 6rem;
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      line-height: 1.1;
+    }
+
+    .hero h2 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      opacity: 0.9;
+      margin-bottom: 2rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Features */
+    .features {
+      padding: 5rem 2rem;
+      background: #f9fafb;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-header h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 1rem;
+    }
+
+    .section-header p {
+      font-size: 1.25rem;
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #111827;
+    }
+
+    .feature-card p {
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* Property Types */
+    .property-types {
+      padding: 5rem 2rem;
+      background: white;
+    }
+
+    .types-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .type-card {
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      padding: 2rem;
+      border-radius: 16px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .type-card:hover {
+      border-color: #4f46e5;
+    }
+
+    .type-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .type-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .type-card p {
+      color: #6b7280;
+    }
+
+    /* Pricing */
+    .pricing {
+      padding: 6rem 2rem;
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      color: white;
+    }
+
+    .pricing .section-header h2,
+    .pricing .section-header p {
+      color: white;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .pricing-card {
+      background: rgba(255,255,255,0.05);
+      padding: 2.5rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      border: none;
+      transform: scale(1.05);
+    }
+
+    .popular-tag {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #10b981;
+      color: white;
+      padding: 0.25rem 1rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .pricing-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .price {
+      font-size: 4rem;
+      font-weight: 800;
+      margin: 1.5rem 0;
+    }
+
+    .price span {
+      font-size: 1rem;
+      font-weight: 400;
+      opacity: 0.6;
+    }
+
+    .features-list {
+      list-style: none;
+      text-align: left;
+      margin: 2rem 0;
+    }
+
+    .features-list li {
+      padding: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .features-list li::before {
+      content: "✓";
+      color: #10b981;
+      font-weight: bold;
+    }
+
+    .pricing-card.featured .features-list li::before {
+      color: #86efac;
+    }
+
+    /* Dashboard Preview */
+    .dashboard-preview {
+      padding: 5rem 2rem;
+      background: #f9fafb;
+      text-align: center;
+    }
+
+    .dashboard-mockup {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 3rem auto 0;
+      overflow: hidden;
+    }
+
+    .dashboard-header {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .dashboard-card {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 1.5rem;
+      flex: 1;
+      text-align: center;
+    }
+
+    .dashboard-card h4 {
+      color: #059669;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .dashboard-card .amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #10b981;
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 6rem 2rem;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .cta p {
+      font-size: 1.25rem;
+      opacity: 0.9;
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    /* Footer */
+    .footer {
+      background: #111827;
+      color: #9ca3af;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: #9ca3af;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+
+      .hero h2 {
+        font-size: 1.25rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .pricing-card.featured {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-content">
+      <div class="logo">
+        👼 Property Angel.ai
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="/login" class="btn btn-outline">Log In</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        🚀 Now with AI-Powered Insights
+      </div>
+      <h1>Property Management,<br>Reimagined with AI</h1>
+      <h2>The all-in-one platform for landlords managing HMOs, Buy-to-Lets, and Serviced Accommodation. Track rents, expenses, and bookings automatically.</h2>
+      <div class="hero-cta">
+        <a href="#pricing" class="btn btn-premium" style="font-size: 1.125rem; padding: 1rem 2rem;">
+          Start Free Trial →
+        </a>
+        <a href="/login" class="btn btn-outline" style="font-size: 1.125rem; padding: 1rem 2rem; border-color: white; color: white;">
+          Existing User? Log In
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Everything You Need</h2>
+        <p>From rent collection to expense tracking, Property Angel.ai automates the busywork so you can focus on growing your portfolio.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💰</div>
+          <h3>Automated Rent Tracking</h3>
+          <p>Never miss a payment. Automatic rent payment tracking with late payment alerts and collection rate analytics.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Profit & Loss Insights</h3>
+          <p>Real-time profit/loss calculations per property. Track monthly income vs expenses with beautiful charts and forecasts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✈️</div>
+          <h3>Serviced Accommodation</h3>
+          <p>Manage Airbnb, VRBO, and Booking.com properties. Track nightly rates, bookings, and auto-calculate property manager fees.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏢</div>
+          <h3>HMO Management</h3>
+          <p>Track individual room tenancies, manage multiple tenants per property, and monitor room occupancy rates.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>6-Month Forecasting</h3>
+          <p>See your projected income and expenses months ahead. Plan for quarterly costs and seasonal booking variations.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">☁️</div>
+          <h3>Document Cloud Storage</h3>
+          <p>Google Drive integration for tenancy agreements, compliance certificates, and property photos - all organized automatically.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Property Types -->
+  <section class="property-types">
+    <div class="container">
+      <div class="section-header">
+        <h2>Built for Every Property Type</h2>
+        <p>Whether you run a single BTL or a portfolio of serviced apartments, we've got you covered.</p>
+      </div>
+      <div class="types-grid">
+        <div class="type-card">
+          <div class="type-icon">🏠</div>
+          <h3>Buy to Let</h3>
+          <p>Single tenancy properties with fixed monthly rents, AST agreements, and long-term tenant management.</p>
+        </div>
+        <div class="type-card">
+          <div class="type-icon">🏢</div>
+          <h3>HMO / Multi-Let</h3>
+          <p>House in Multiple Occupation with individual room tenancies and shared facility management.</p>
+        </div>
+        <div class="type-card">
+          <div class="type-icon">✈️</div>
+          <h3>Serviced Accommodation</h3>
+          <p>Short-term rentals with nightly pricing, platform integrations, and property manager fee calculations.</p>
+        </div>
+        <div class="type-card">
+          <div class="type-icon">🏭</div>
+          <h3>Commercial</h3>
+          <p>Commercial property lettings with lease management and business tenant tracking.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard Preview -->
+  <section class="dashboard-preview">
+    <div class="container">
+      <div class="section-header">
+        <h2>Your Dashboard, Simplified</h2>
+        <p>See your entire portfolio at a glance. Track income, monitor expenses, and never miss a payment.</p>
+      </div>
+      <div class="dashboard-mockup">
+        <div class="dashboard-header">
+          <h3 style="flex: 1; text-align: left; color: #111827;">📊 Portfolio Overview</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+          <div class="dashboard-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #10b981;">
+            <h4 style="color: #059669;">Monthly Income</h4>
+            <div class="amount" style="color: #10b981;">£4,850</div>
+          </div>
+          <div class="dashboard-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #f59e0b;">
+            <h4 style="color: #d97706;">Expenses</h4>
+            <div class="amount" style="color: #f59e0b;">£890</div>
+          </div>
+          <div class="dashboard-card" style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-color: #6366f1;">
+            <h4 style="color: #4f46e5;">Net Profit</h4>
+            <div class="amount" style="color: #6366f1;">£3,960</div>
+          </div>
+          <div class="dashboard-card" style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-color: #ec4899;">
+            <h4 style="color: #db2777;">Collection Rate</h4>
+            <div class="amount" style="color: #ec4899;">98%</div>
+          </div>
+        </div>
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; text-align: left;">
+          <p style="color: #6b7280; margin-bottom: 1rem;">📍 2 Mill Farm House — £2,800/month · 1 pending payment</p>
+          <p style="color: #6b7280; margin-bottom: 1rem;">📍 Air Property Office — £1,200/month · All paid ✓</p>
+          <p style="color: #6b7280;">📍 Flat 6 London — Serviced Accommodation · 12 bookings this month</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="pricing">
+    <div class="container">
+      <div class="section-header">
+        <h2>Simple, Transparent Pricing</h2>
+        <p>Start free, then scale as your portfolio grows. No hidden fees, no surprises.</p>
+      </div>
+      <div class="pricing-grid">
+        <!-- Starter -->
+        <div class="pricing-card">
+          <h3>Starter</h3>
+          <div class="price">£9<span>/mo</span></div>
+          <p>Perfect for first-time landlords</p>
+          <ul class="features-list">
+            <li>Up to 3 properties</li>
+            <li>Basic rent tracking</li>
+            <li>Expense recording</li>
+            <li>Tenant management</li>
+            <li>Email support</li>
+          </ul>
+          <a href="#signup" onclick="alert('Starter plan coming soon!')" class="btn btn-outline" style="border-color: white; color: white; width: 100%;">
+            Start Free Trial
+          </a>
+        </div>
+
+        <!-- Professional (Featured) -->
+        <div class="pricing-card featured">
+          <span class="popular-tag">Most Popular</span>
+          <h3>Professional</h3>
+          <div class="price">£29<span>/mo</span></div>
+          <p>For growing portfolios</p>
+          <ul class="features-list">
+            <li>Unlimited properties</li>
+            <li>All property types (HMO, SA, BTL)</li>
+            <li>6-month financial forecasting</li>
+            <li>Google Drive integration</li>
+            <li>PM payment calculations</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="#signup" onclick="alert('Professional plan coming soon!')" class="btn btn-outline" style="border-color: white; color: white; background: rgba(255,255,255,0.1); width: 100%;">
+            Start Free Trial
+          </a>
+        </div>
+
+        <!-- Portfolio -->
+        <div class="pricing-card">
+          <h3>Portfolio</h3>
+          <div class="price">£79<span>/mo</span></div>
+          <p>For serious investors</p>
+          <ul class="features-list">
+            <li>Everything in Professional</li>
+            <li>QuickBooks integration</li>
+            <li>Multi-user access</li>
+            <li>API access</li>
+            <li>White-label reports</li>
+            <li>Dedicated account manager</li>
+          </ul>
+          <a href="#signup" onclick="alert('Portfolio plan coming soon!')" class="btn btn-outline" style="border-color: white; color: white; width: 100%;">
+            Contact Sales
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <h2>Ready to Transform Your Property Management?</h2>
+      <p>Join thousands of landlords who have simplified their portfolio management with Property Angel.ai</p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+        <a href="#pricing" class="btn btn-premium" style="font-size: 1.25rem; padding: 1rem 2.5rem;">
+          Get Started Free →
+        </a>
+        <a href="/login" class="btn btn-outline" style="font-size: 1.25rem; padding: 1rem 2.5rem; border-color: white; color: white;">
+          Log In to Dashboard
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="mailto:hello@propangel.co.uk">Contact</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+      <p>© 2026 Property Angel.ai. All rights reserved.</p>
+      <p style="margin-top: 1rem; font-size: 0.875rem;">👼 Powered by AI · Made with ❤️ for landlords</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const { updateTenancyStatuses, generateRentPayments } = require('../utils/tenancy-helpers');
 
 // GET all tenancies for authenticated landlord
 router.get('/', async (req, res) => {
   try {
+    // Auto-update statuses first
+    await updateTenancyStatuses(req.landlord_id);
+    
     const { data: tenancies, error } = await req.supabase
       .from('tenancies')
       .select(`
@@ -203,6 +207,28 @@ router.delete('/:id/tenants/:tenantId', async (req, res) => {
   } catch (err) {
     console.error('Error removing tenant:', err);
     res.status(500).json({ error: 'Failed to remove tenant' });
+  }
+});
+
+// Generate rent payments for a tenancy
+router.post('/:id/generate-payments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await generateRentPayments(id, req.landlord_id);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Generated ${result.created} rent payment(s)`,
+      created: result.created 
+    });
+  } catch (err) {
+    console.error('Error generating payments:', err);
+    res.status(500).json({ error: 'Failed to generate payments' });
   }
 });
 

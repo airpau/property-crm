@@ -773,3 +773,87 @@ body {
     text-align: center;
   }
 }
+/* Portfolio Summary Styles */
+.portfolio-summary {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+  color: white;
+}
+
+.portfolio-summary h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.portfolio-stats {
+  display: flex;
+  gap: 2rem;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.portfolio-stat {
+  text-align: center;
+  padding: 1rem;
+  min-width: 150px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s;
+}
+
+.portfolio-stat:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.portfolio-stat .stat-name {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.portfolio-stat .stat-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.portfolio-stat .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.stat-value.income {
+  color: #4ade80;
+}
+
+.stat-value.expense {
+  color: #fb7185;
+}
+
+.stat-value.positive {
+  color: #4ade80;
+}
+
+.stat-value.negative {
+  color: #fb7185;
+}
+
+/* Responsive additions */
+@media (max-width: 768px) {
+  .portfolio-stats {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .portfolio-stat {
+    min-width: 140px;
+  }
+}

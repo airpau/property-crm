@@ -4,6 +4,7 @@ import axios from 'axios';
 import DocumentUpload from '../components/DocumentUpload';
 import DriveFolderMapping from '../components/DriveFolderMapping';
 import AddTenancy from '../components/AddTenancy';
+import AddExpense from '../components/AddExpense';
 import './PropertyDetail.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -32,12 +33,23 @@ function PropertyDetail() {
   
   // Add tenancy modal state
   const [showAddTenancy, setShowAddTenancy] = useState(false);
+  
+  // Expense tracking state
+  const [expenses, setExpenses] = useState([]);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [expenseSummary, setExpenseSummary] = useState({
+    oneOff: 0,
+    monthlyRecurring: 0,
+    totalThisMonth: 0,
+    byCategory: {}
+  });
 
   useEffect(() => {
     fetchProperty();
     checkDriveStatus();
     checkQuickBooksStatus();
     loadPropertyDocuments();
+    fetchExpenses();
   }, [id]);
 
   const checkDriveStatus = async () => {
@@ -73,6 +85,60 @@ function PropertyDetail() {
       setQbCompanyName(response.data.companyName);
     } catch (error) {
       setQbConnected(false);
+    }
+  };
+
+  const fetchExpenses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      // Get all expenses for this property
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      const response = await axios.get(
+        `${API_URL}/api/expenses/property/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const allExpenses = response.data || [];
+      setExpenses(allExpenses);
+      
+      // Calculate summary
+      const summary = {
+        oneOff: 0,
+        monthlyRecurring: 0,
+        totalThisMonth: 0,
+        byCategory: {}
+      };
+      
+      allExpenses.forEach(expense => {
+        const amount = parseFloat(expense.amount) || 0;
+        const expenseDate = new Date(expense.expense_date);
+        
+        if (!summary.byCategory[expense.category]) {
+          summary.byCategory[expense.category] = 0;
+        }
+        
+        if (expense.frequency === 'one-off') {
+          summary.oneOff += amount;
+          // Count if in current month
+          if (expenseDate >= firstDayOfMonth) {
+            summary.totalThisMonth += amount;
+            summary.byCategory[expense.category] += amount;
+          }
+        } else {
+          // Recurring expense
+          summary.monthlyRecurring += amount;
+          summary.totalThisMonth += amount;
+          summary.byCategory[expense.category] += amount;
+        }
+      });
+      
+      setExpenseSummary(summary);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
     }
   };
 
@@ -338,9 +404,10 @@ function PropertyDetail() {
 
   const totalMonthlyRent = upcomingPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
   
-  // Calculate total rental income from ALL active tenancies
+  // Calculate total rental income from active tenancies that have STARTED
+  const today = new Date();
   const totalIncome = property?.tenancies
-    ?.filter(t => t.status === 'active')
+    ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)
     ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
 
   return (
@@ -788,6 +855,88 @@ function PropertyDetail() {
             </div>
           )}
         </div>
+
+        {/* Expenses & Profit/Loss Section */}
+        <div className="section-card expenses-section" style={{ gridColumn: '1 / -1' }}>
+          <div className="expenses-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3>💰 Income & Expenses</h3>
+            <button
+              onClick={() => setShowAddExpense(true)}
+              style={{
+                background: '#dc2626',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>+</span> Add Expense
+            </button>
+          </div>
+
+          {/* Profit/Loss Card */}
+          <div className={`profit-loss-card ${totalIncome - expenseSummary.totalThisMonth >= 0 ? 'profit' : 'loss'}`}>
+            <h3>📊 This Month</h3>
+            <div className="amount">
+              {totalIncome - expenseSummary.totalThisMonth >= 0 ? '+' : ''}£{(totalIncome - expenseSummary.totalThisMonth).toLocaleString()}
+            </div>
+            <div className="breakdown">
+              💵 Income: £{totalIncome.toLocaleString()} | 📉 Expenses: £{expenseSummary.totalThisMonth.toLocaleString()}
+            </div>
+          </div>
+
+          {/* Expense Summary */}
+          <div className="expense-summary">
+            <h4>Expense Breakdown</h4>
+            <div className="summary-grid">
+              <div className="summary-item">
+                <div className="label">Recurring</div>
+                <div className="value">£{expenseSummary.monthlyRecurring.toLocaleString()}</div>
+              </div>
+              <div className="summary-item">
+                <div className="label">One-off</div>
+                <div className="value">£{expenseSummary.oneOff.toLocaleString()}</div>
+              </div>
+              <div className="summary-item">
+                <div className="label">Total</div>
+                <div className="value negative">£{expenseSummary.totalThisMonth.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Expenses List */}
+          {expenses.length > 0 && (
+            <div className="expense-list">
+              <h4>Recent Expenses</h4>
+              {expenses.slice(0, 5).map(expense => (
+                <div key={expense.id} className={`expense-item ${expense.frequency}`}>
+                  <div className="expense-info">
+                    <div className="expense-category">
+                      {expense.category.replace('_', ' ').toUpperCase()}
+                    </div>
+                    {expense.description && (
+                      <div className="expense-description">{expense.description}</div>
+                    )}
+                    <div className="expense-meta">
+                      {new Date(expense.expense_date).toLocaleDateString('en-GB')} • {expense.frequency}
+                      {expense.is_tax_deductible && ' • Tax deductible'}
+                    </div>
+                  </div>
+                  <div className="expense-amount">
+                    <div className="amount">£{parseFloat(expense.amount).toLocaleString()}</div>
+                    <div className="frequency">{expense.frequency === 'one-off' ? 'One-off' : 'Recurring'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <Link to="/properties" className="back-link">← Back to Properties</Link>
@@ -846,6 +995,17 @@ function PropertyDetail() {
           onSuccess={() => {
             fetchProperty(); // Refresh property data
             checkDriveStatus(); // Refresh any related data
+          }}
+        />
+      )}
+
+      {/* Add Expense Modal */}
+      {showAddExpense && (
+        <AddExpense
+          propertyId={id}
+          onClose={() => setShowAddExpense(false)}
+          onSuccess={() => {
+            fetchExpenses(); // Refresh expense data
           }}
         />
       )}

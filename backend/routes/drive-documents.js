@@ -3,15 +3,22 @@ const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+// Lazy load Supabase client
+let supabase = null;
+function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
+  }
+  return supabase;
+}
 
 // Get Drive folders for a property
 router.get('/properties/:propertyId/folders', async (req, res) => {
   try {
-    const { data: folders, error } = await supabase
+    const { data: folders, error } = await getSupabase()
       .from('property_drive_folders')
       .select('*')
       .eq('property_id', req.params.propertyId)
@@ -31,13 +38,13 @@ router.post('/properties/:propertyId/folders', async (req, res) => {
     const { folder_id, folder_name, folder_path, is_default } = req.body;
     
     if (is_default) {
-      await supabase
+      await getSupabase()
         .from('property_drive_folders')
         .update({ is_default: false })
         .eq('property_id', req.params.propertyId);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('property_drive_folders')
       .upsert({
         property_id: req.params.propertyId,
@@ -60,7 +67,7 @@ router.post('/properties/:propertyId/folders', async (req, res) => {
 // Get documents for a property
 router.get('/properties/:propertyId/documents', async (req, res) => {
   try {
-    const { data: documents, error } = await supabase
+    const { data: documents, error } = await getSupabase()
       .from('property_documents')
       .select(`
         *,
@@ -84,7 +91,7 @@ router.post('/properties/:propertyId/documents', async (req, res) => {
     const { drive_file_id, drive_file_name, drive_file_url, file_type, tenancy_id, tenant_id } = req.body;
     const userId = req.user?.id;
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('property_documents')
       .insert({
         property_id: req.params.propertyId,
@@ -111,7 +118,7 @@ router.post('/properties/:propertyId/documents', async (req, res) => {
 // Delete document reference
 router.delete('/documents/:documentId', async (req, res) => {
   try {
-    await supabase
+    await getSupabase()
       .from('property_documents')
       .delete()
       .eq('id', req.params.documentId);
@@ -126,7 +133,7 @@ router.delete('/documents/:documentId', async (req, res) => {
 // Delete folder mapping
 router.delete('/folders/:folderId', async (req, res) => {
   try {
-    await supabase
+    await getSupabase()
       .from('property_drive_folders')
       .delete()
       .eq('id', req.params.folderId);

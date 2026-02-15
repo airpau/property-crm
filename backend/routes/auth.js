@@ -2,16 +2,43 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const router = express.Router();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-// Create public Supabase client for auth operations
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+// Lazy load Supabase client
+let supabaseInstance = null;
+function getSupabase() {
+  if (!supabaseInstance) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+    
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
   }
-});
+  return supabaseInstance;
+}
+
+// Create auth client with token
+function createAuthClient(token) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  });
+}
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -25,7 +52,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Register user with Supabase Auth
-    const { data: { user, session }, error } = await supabase.auth.signUp({
+    const { data: { user, session }, error } = await getSupabase().auth.signUp({
       email,
       password,
       options: {
@@ -68,7 +95,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const { data: { session, user }, error } = await supabase.auth.signInWithPassword({
+    const { data: { session, user }, error } = await getSupabase().auth.signInWithPassword({
       email,
       password
     });
@@ -103,18 +130,7 @@ router.post('/logout', async (req, res) => {
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      
-      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: false
-        },
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      });
-
+      const supabaseAuth = createAuthClient(token);
       await supabaseAuth.auth.signOut();
     }
 
@@ -135,17 +151,7 @@ router.get('/me', async (req, res) => {
     }
 
     const token = authHeader.split(' ')[1];
-    
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false
-      },
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    });
+    const supabaseAuth = createAuthClient(token);
 
     const { data: { user }, error } = await supabaseAuth.auth.getUser();
 
@@ -177,7 +183,7 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.FRONTEND_URL}/reset-password`
     });
 
@@ -205,7 +211,7 @@ router.post('/refresh', async (req, res) => {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
-    const { data: { session }, error } = await supabase.auth.refreshSession({
+    const { data: { session }, error } = await getSupabase().auth.refreshSession({
       refresh_token: refreshToken
     });
 

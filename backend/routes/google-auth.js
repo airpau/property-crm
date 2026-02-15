@@ -3,10 +3,17 @@ const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+// Lazy load Supabase client
+let supabase = null;
+function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
+  }
+  return supabase;
+}
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -42,7 +49,7 @@ router.get('/status', async (req, res) => {
   try {
     const userId = req.user?.id;
     
-    const { data: tokenData, error } = await supabase
+    const { data: tokenData, error } = await getSupabase()
       .from('google_drive_tokens')
       .select('drive_email, created_at')
       .eq('landlord_id', userId)
@@ -103,7 +110,7 @@ router.post('/connect', async (req, res) => {
     expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
 
     // Save tokens
-    await supabase
+    await getSupabase()
       .from('google_drive_tokens')
       .upsert({
         landlord_id: userId,
@@ -128,7 +135,7 @@ router.delete('/disconnect', async (req, res) => {
   try {
     const userId = req.user?.id;
     
-    await supabase
+    await getSupabase()
       .from('google_drive_tokens')
       .delete()
       .eq('landlord_id', userId);
@@ -145,7 +152,7 @@ router.get('/token', async (req, res) => {
   try {
     const userId = req.user?.id;
     
-    const { data: tokenData, error } = await supabase
+    const { data: tokenData, error } = await getSupabase()
       .from('google_drive_tokens')
       .select('*')
       .eq('landlord_id', userId)
@@ -179,7 +186,7 @@ router.get('/token', async (req, res) => {
       const newExpiresAt = new Date();
       newExpiresAt.setSeconds(newExpiresAt.getSeconds() + refreshData.expires_in);
 
-      await supabase
+      await getSupabase()
         .from('google_drive_tokens')
         .update({
           access_token: refreshData.access_token,

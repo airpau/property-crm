@@ -45,8 +45,10 @@ function getAdminSupabase() {
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const client = getVerifySupabase();
-    if (!client) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
       return res.status(500).json({ error: 'Auth service not configured' });
     }
     
@@ -58,8 +60,21 @@ const authMiddleware = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
+    // Create a client with the user's token for RLS
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+
     // Verify the JWT token with Supabase
-    const { data: { user }, error } = await client.auth.getUser(token);
+    const { data: { user }, error } = await client.auth.getUser();
 
     if (error || !user) {
       console.error('Token verification failed:', error);
@@ -70,8 +85,8 @@ const authMiddleware = async (req, res, next) => {
     req.user = user;
     req.landlord_id = user.id;
     
-    // Create authenticated Supabase client for this request
-    req.supabase = getVerifySupabase();
+    // Use the authenticated client (has user's token in headers)
+    req.supabase = client;
 
     next();
   } catch (err) {
@@ -83,8 +98,10 @@ const authMiddleware = async (req, res, next) => {
 // Optional auth - doesn't block if no token, but sets user if present
 const optionalAuth = async (req, res, next) => {
   try {
-    const client = getVerifySupabase();
-    if (!client) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
       return next();
     }
     
@@ -92,7 +109,20 @@ const optionalAuth = async (req, res, next) => {
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const { data: { user }, error } = await client.auth.getUser(token);
+      
+      const client = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      });
+      
+      const { data: { user }, error } = await client.auth.getUser();
       
       if (!error && user) {
         req.user = user;

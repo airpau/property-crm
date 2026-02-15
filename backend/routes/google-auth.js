@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,

@@ -10,9 +10,8 @@ const propertiesRouter = require('./routes/properties');
 const tenantsRouter = require('./routes/tenants');
 const tenanciesRouter = require('./routes/tenancies');
 const rentPaymentsRouter = require('./routes/rent-payments');
-// Google Drive routes need env vars set in Render dashboard first
-// const driveDocumentsRouter = require('./routes/drive-documents');
-// const googleAuthRouter = require('./routes/google-auth');
+const driveDocumentsRouter = require('./routes/drive-documents');
+const googleAuthRouter = require('./routes/google-auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -47,9 +46,8 @@ app.use('/api/properties', authMiddleware, propertiesRouter);
 app.use('/api/tenants', authMiddleware, tenantsRouter);
 app.use('/api/tenancies', authMiddleware, tenanciesRouter);
 app.use('/api/rent-payments', authMiddleware, rentPaymentsRouter);
-// Google Drive - add via Render dashboard after setting env vars
-// app.use('/api/drive', authMiddleware, driveDocumentsRouter);
-// app.use('/api/google', authMiddleware, googleAuthRouter);
+app.use('/api/drive', authMiddleware, driveDocumentsRouter);
+app.use('/api/google', authMiddleware, googleAuthRouter);
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {

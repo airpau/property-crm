@@ -160,7 +160,7 @@ router.get('/summary/current-month', async (req, res) => {
   }
 });
 
-// POST generate rent payments from active tenancies
+// POST generate rent payments from active tenancies AND SA bookings
 router.post('/generate', async (req, res) => {
   try {
     const { month = new Date().toISOString().slice(0, 7) } = req.body; // Format: "2026-02"
@@ -169,7 +169,14 @@ router.post('/generate', async (req, res) => {
     const [year, monthNum] = month.split('-').map(Number);
     const startOfMonth = new Date(year, monthNum - 1, 1);
     const endOfMonth = new Date(year, monthNum, 0);
+    
+    const monthStart = `${month}-01`;
+    const monthEnd = `${month}-${new Date(year, monthNum, 0).getDate()}`;
+    
+    // Track all payments to be inserted
+    let paymentsToInsert = [];
 
+    // ========= PART 1: TENANCY PAYMENTS =========
     // Get all active tenancies
     const { data: tenancies, error: tenancyError } = await req.supabase
       .from('tenancies')
@@ -186,37 +193,27 @@ router.post('/generate', async (req, res) => {
 
     if (tenancyError) throw tenancyError;
 
-    // Get existing payments for this month
-    const monthStart = `${month}-01`;
-    const monthEnd = `${month}-${new Date(year, monthNum, 0).getDate()}`;
-    
-    const { data: existingPayments, error: paymentError } = await req.supabase
+    // Get existing tenancy payments for this month
+    const { data: existingTenancyPayments, error: tenancyPaymentError } = await req.supabase
       .from('rent_payments')
       .select('tenancy_id')
       .eq('landlord_id', req.landlord_id)
       .gte('due_date', monthStart)
-      .lte('due_date', monthEnd);
+      .lte('due_date', monthEnd)
+      .not('tenancy_id', 'is', null);
 
-    if (paymentError) throw paymentError;
+    if (tenancyPaymentError) throw tenancyPaymentError;
 
     // Get set of tenancy IDs that already have payments this month
-    const tenancyIdsWithPayments = new Set((existingPayments || []).map(p => p.tenancy_id));
+    const tenancyIdsWithPayments = new Set((existingTenancyPayments || []).map(p => p.tenancy_id));
 
     // Filter out tenancies that already have payments this month
     const tenanciesNeedingPayments = (tenancies || []).filter(t => {
       return !tenancyIdsWithPayments.has(t.id);
     });
 
-    if (tenanciesNeedingPayments.length === 0) {
-      return res.json({ 
-        message: 'No new payments to generate',
-        generated: 0,
-        total: tenancies?.length || 0
-      });
-    }
-
-    // Create payment records
-    const paymentsToInsert = tenanciesNeedingPayments.map(t => {
+    // Create tenancy payment records
+    const tenancyPayments = tenanciesNeedingPayments.map(t => {
       const dueDay = t.rent_due_day || 1;
       const dueDate = new Date(year, monthNum - 1, dueDay);
       
@@ -233,6 +230,60 @@ router.post('/generate', async (req, res) => {
         created_at: new Date().toISOString()
       };
     });
+    
+    paymentsToInsert = [...paymentsToInsert, ...tenancyPayments];
+    
+    // ========= PART 2: SA BOOKING PAYMENTS =========
+    // Get all SA bookings with check_in in this month that don't have rent_payments yet
+    const { data: saBookings, error: bookingError } = await req.supabase
+      .from('sa_bookings')
+      .select('id, property_id, landlord_id, check_in, net_revenue, status')
+      .eq('landlord_id', req.landlord_id)
+      .gte('check_in', monthStart)
+      .lte('check_in', monthEnd)
+      .not('status', 'eq', 'cancelled');
+    
+    if (bookingError) throw bookingError;
+    
+    // Check which bookings already have rent_payments
+    let bookingsNeedingPayments = [];
+    if (saBookings && saBookings.length > 0) {
+      const bookingIds = saBookings.map(b => b.id);
+      const { data: existingBookingPayments } = await req.supabase
+        .from('rent_payments')
+        .select('sa_booking_id')
+        .eq('landlord_id', req.landlord_id)
+        .in('sa_booking_id', bookingIds);
+      
+      const bookingIdsWithPayments = new Set((existingBookingPayments || []).map(p => p.sa_booking_id));
+      
+      bookingsNeedingPayments = saBookings.filter(b => !bookingIdsWithPayments.has(b.id));
+    }
+    
+    // Create SA booking payment records
+    const bookingPayments = bookingsNeedingPayments.map(b => {
+      return {
+        landlord_id: b.landlord_id,
+        sa_booking_id: b.id,
+        property_id: b.property_id,
+        due_date: b.check_in,
+        amount_due: b.net_revenue,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+    });
+    
+    paymentsToInsert = [...paymentsToInsert, ...bookingPayments];
+
+    // If nothing to insert, return early
+    if (paymentsToInsert.length === 0) {
+      return res.json({ 
+        message: 'No new payments to generate',
+        generated: 0,
+        tenancyCount: tenanciesNeedingPayments.length,
+        bookingCount: bookingsNeedingPayments.length
+      });
+    }
 
     const { data: insertedPayments, error: insertError } = await req.supabase
       .from('rent_payments')
@@ -244,7 +295,8 @@ router.post('/generate', async (req, res) => {
     res.json({
       message: `${insertedPayments?.length || 0} rent payments generated for ${month}`,
       generated: insertedPayments?.length || 0,
-      total: tenancies?.length || 0,
+      tenancyCount: tenanciesNeedingPayments.length,
+      bookingCount: bookingsNeedingPayments.length,
       payments: insertedPayments
     });
   } catch (err) {

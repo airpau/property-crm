@@ -649,6 +649,7 @@ function PropertyDetail() {
                     const checkIn = new Date(b.check_in);
                     return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
                   }).length} bookings this month
+                  {property.currency && property.currency !== 'GBP' && ` (converted from ${property.currency})`}
                 </span>
               </div>
             )}
@@ -974,6 +975,12 @@ function PropertyDetail() {
                             )}
                           </td>
                           <td>
+                            <div className="guest-name">{booking.guest_name}</div>
+                            {booking.reservation_id && (
+                              <div className="res-id">{booking.reservation_id}</div>
+                            )}
+                          </td>
+                          <td>
                             <div className="booking-dates">
                               {new Date(booking.check_in).toLocaleDateString('en-GB')}
                               <br/>
@@ -986,7 +993,16 @@ function PropertyDetail() {
                               {booking.platform}
                             </span>
                           </td>
-                          <td>£{parseFloat(booking.net_revenue).toFixed(2)}</td>
+                          <td>
+                            {booking.currency && booking.currency !== 'GBP' ? (
+                              <div>
+                                <div>{booking.currency} {parseFloat(booking.net_revenue).toFixed(2)}</div>
+                                <small style={{color: '#6b7280'}}>≈ £{(booking.net_revenue_gbp || parseFloat(booking.net_revenue) * 0.79).toFixed(2)} GBP</small>
+                              </div>
+                            ) : (
+                              `£${parseFloat(booking.net_revenue).toFixed(2)}`
+                            )}
+                          </td>
                           <td>
                             <span className={`status-badge ${booking.status}`}>
                               {booking.status === 'confirmed' ? '✓' : '●'} {booking.status}
@@ -1005,7 +1021,7 @@ function PropertyDetail() {
                                 {booking.pm_payment_status === 'paid' ? (
                                   <small className="pm-paid">PM Paid</small>
                                 ) : (
-                                  <small className="pm-owed">PM Owed: £{booking.total_pm_deduction}</small>
+                                  <small className="pm-owed">PM Owed: {booking.currency === 'GBP' ? '£' : '$'}{booking.total_pm_deduction}</small>
                                 )}
                               </div>
                             )}

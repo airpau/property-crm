@@ -4,6 +4,25 @@
   max-width: 550px;
   max-height: 90vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Fix: Ensure inputs are tappable */
+.sa-booking-modal input,
+.sa-booking-modal select,
+.sa-booking-modal textarea {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* iOS Fix: Prevent zoom on input focus */
+@media screen and (max-width: 768px) {
+  .sa-booking-modal input,
+  .sa-booking-modal select {
+    font-size: 16px;
+  }
 }
 
 .sa-booking-modal .form-section {
@@ -50,6 +69,8 @@
   font-size: 13px;
   transition: all 0.2s ease;
   text-align: center;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
 }
 
 .platform-btn:hover {
@@ -193,6 +214,8 @@
   cursor: pointer;
   font-size: 16px;
   transition: all 0.15s;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation;
 }
 
 .btn-suggest:hover {

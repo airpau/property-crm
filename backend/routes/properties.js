@@ -138,17 +138,24 @@ router.get('/', async (req, res) => {
       const totalExpenses = regularExpenses + monthlyPMFees;
       const netIncome = monthlyIncome - totalExpenses;
       
-      console.log(`[LIST] ${p.name}: income=£${monthlyIncome.toFixed(2)}, expenses=£${regularExpenses.toFixed(2)}, pm=£${monthlyPMFees.toFixed(2)}, total=£${totalExpenses.toFixed(2)}, net=£${netIncome.toFixed(2)}`);
+      // Round to 2 decimal places for display
+      const roundedMonthlyIncome = Math.round(monthlyIncome * 100) / 100;
+      const roundedTotalExpenses = Math.round(totalExpenses * 100) / 100;
+      const roundedNetIncome = Math.round(netIncome * 100) / 100;
+      const roundedPMFees = Math.round(monthlyPMFees * 100) / 100;
+      const roundedSARevenue = Math.round(saBookingRevenue * 100) / 100;
+      
+      console.log(`[LIST] ${p.name}: income=£${roundedMonthlyIncome.toFixed(2)}, expenses=£${regularExpenses.toFixed(2)}, pm=£${roundedPMFees.toFixed(2)}, total=£${roundedTotalExpenses.toFixed(2)}, net=£${roundedNetIncome.toFixed(2)}`);
 
       return {
         ...p,
         active_tenancies: activeTenancies.length,
         active_tenants: activeTenants,
-        monthly_income: monthlyIncome,
-        total_expenses: totalExpenses,
-        net_income: netIncome,
-        sa_booking_revenue: p.property_category === 'sa' ? saBookingRevenue : 0,
-        pm_fees: p.property_category === 'sa' ? monthlyPMFees : 0
+        monthly_income: roundedMonthlyIncome,
+        total_expenses: roundedTotalExpenses,
+        net_income: roundedNetIncome,
+        sa_booking_revenue: p.property_category === 'sa' ? roundedSARevenue : 0,
+        pm_fees: p.property_category === 'sa' ? roundedPMFees : 0
       };
     }));
 
@@ -302,6 +309,12 @@ router.get('/:id', async (req, res) => {
       var netIncome = monthlyIncome - totalExpenses;
       var pmFees = monthlyPMFees;
       
+      // Round all values to 2 decimal places
+      monthlyIncome = Math.round(monthlyIncome * 100) / 100;
+      totalExpenses = Math.round(totalExpenses * 100) / 100;
+      netIncome = Math.round(netIncome * 100) / 100;
+      pmFees = Math.round(pmFees * 100) / 100;
+      
       console.log(`[SINGLE-SA] ${property.name}: income=£${monthlyIncome.toFixed(2)}, regular=£${regularExpenses.toFixed(2)}, pm=£${pmFees.toFixed(2)}, total=£${totalExpenses.toFixed(2)}, net=£${netIncome.toFixed(2)}`);
     } else {
       // Non-SA properties - still need expenses
@@ -331,6 +344,15 @@ router.get('/:id', async (req, res) => {
       var pmFees = 0;
     }
     
+    // Round all financial values to 2 decimal places before sending
+    monthlyIncome = Math.round(monthlyIncome * 100) / 100;
+    totalExpenses = Math.round(totalExpenses * 100) / 100;
+    netIncome = Math.round(netIncome * 100) / 100;
+    pmFees = Math.round(pmFees * 100) / 100;
+    const saBookingRevenue = property.property_category === 'sa' 
+      ? Math.round((monthlyIncome - formattedTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)) * 100) / 100
+      : undefined;
+    
     console.log(`[SINGLE-RESPONSE] ${property.name}: monthly_income=${monthlyIncome}, total_expenses=${totalExpenses}, pm_fees=${pmFees}, net_income=${netIncome}`);
 
     res.json({
@@ -339,7 +361,7 @@ router.get('/:id', async (req, res) => {
       total_expenses: totalExpenses,
       net_income: netIncome,
       pm_fees: pmFees,
-      sa_booking_revenue: property.property_category === 'sa' ? (monthlyIncome - formattedTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)) : undefined,
+      sa_booking_revenue: saBookingRevenue,
       tenancies: formattedTenancies,
       compliance: compliance || [],
       recent_payments: payments || []

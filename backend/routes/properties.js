@@ -300,6 +300,8 @@ router.get('/:id', async (req, res) => {
       var totalExpenses = regularExpenses + monthlyPMFees;
       var netIncome = monthlyIncome - totalExpenses;
       var pmFees = monthlyPMFees;
+      
+      console.log(`[SINGLE-SA] ${property.name}: income=£${monthlyIncome.toFixed(2)}, regular=£${regularExpenses.toFixed(2)}, pm=£${pmFees.toFixed(2)}, total=£${totalExpenses.toFixed(2)}, net=£${netIncome.toFixed(2)}`);
     } else {
       // Non-SA properties - still need expenses
       const { data: expenses } = await req.supabase

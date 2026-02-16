@@ -1529,6 +1529,7 @@ function PropertyDetail() {
           onClose={() => setShowAddExpense(false)}
           onSuccess={() => {
             fetchExpenses(); // Refresh expense data
+            fetchProperty(); // Refresh property data (net_income)
           }}
         />
       )}
@@ -1540,6 +1541,7 @@ function PropertyDetail() {
           onClose={() => setShowAddSABooking(false)}
           onSuccess={() => {
             fetchSABookings(); // Refresh SA booking data
+            fetchProperty();   // Refresh property data (monthly_income, net_income)
           }}
         />
       )}

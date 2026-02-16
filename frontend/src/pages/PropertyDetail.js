@@ -605,8 +605,13 @@ function PropertyDetail() {
   
   // Use API-calculated values directly for reliability
   const totalIncome = property?.monthly_income || 0;
-  const totalExpenses = (property?.total_expenses || 0);
-  const netIncome = property?.net_income || (totalIncome - totalExpenses);
+  const totalExpenses = property?.total_expenses ?? 0;  // Use nullish coalescing
+  const monthlyPMFees = property?.pm_fees ?? 0;  // Use nullish coalescing
+  
+  // Net income: prefer API value, but calculate if not present
+  const netIncome = property?.net_income !== undefined && property?.net_income !== null 
+    ? property.net_income 
+    : (totalIncome - totalExpenses);
   
   // Calculate breakdown values for display only
   const tenancyIncome = property?.tenancies
@@ -614,9 +619,6 @@ function PropertyDetail() {
     ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
   
   const monthlySARevenue = totalIncome - tenancyIncome;
-  
-  // Get PM fees from property data
-  const monthlyPMFees = property?.pm_fees || 0;
 
   return (
     <div className="property-detail-container">

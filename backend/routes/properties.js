@@ -163,6 +163,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`[SINGLE-PROPERTY] Fetching property ${id}`);
     
     // Auto-update tenancy statuses before returning
     await updateTenancyStatuses(req.landlord_id);
@@ -329,6 +330,8 @@ router.get('/:id', async (req, res) => {
       var netIncome = monthlyIncome - totalExpenses;
       var pmFees = 0;
     }
+    
+    console.log(`[SINGLE-RESPONSE] ${property.name}: monthly_income=${monthlyIncome}, total_expenses=${totalExpenses}, pm_fees=${pmFees}, net_income=${netIncome}`);
 
     res.json({
       ...property,

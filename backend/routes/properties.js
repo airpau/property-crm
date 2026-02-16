@@ -2,6 +2,21 @@ const express = require('express');
 const router = express.Router();
 const { updateTenancyStatuses } = require('../utils/tenancy-helpers');
 
+// FX rates to GBP (approximate Feb 2026 rates - update as needed)
+const FX_RATES = {
+  GBP: 1.0,
+  USD: 0.79,  // 1 USD = 0.79 GBP
+  EUR: 0.83,  // 1 EUR = 0.83 GBP
+  CAD: 0.56,  // 1 CAD = 0.56 GBP
+  AUD: 0.49   // 1 AUD = 0.49 GBP
+};
+
+// Convert amount to GBP
+function toGBP(amount, currency = 'GBP') {
+  const rate = FX_RATES[currency] || 1.0;
+  return parseFloat(amount || 0) * rate;
+}
+
 // GET all properties for authenticated landlord
 router.get('/', async (req, res) => {
   try {
@@ -48,10 +63,10 @@ router.get('/', async (req, res) => {
         const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
         const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
         
-        // Get all non-cancelled bookings for this property
+        // Get all non-cancelled bookings for this property with currency
         const { data: saBookings } = await req.supabase
           .from('sa_bookings')
-          .select('net_revenue, received_date, check_in, payment_status')
+          .select('net_revenue, received_date, check_in, payment_status, currency')
           .eq('property_id', p.id)
           .eq('landlord_id', req.landlord_id)
           .not('status', 'eq', 'cancelled');
@@ -69,10 +84,14 @@ router.get('/', async (req, res) => {
           return false;
         });
         
-        saBookingRevenue = monthlyBookings.reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
+        // Convert all booking revenues to GBP
+        saBookingRevenue = monthlyBookings.reduce((sum, b) => {
+          const gbpAmount = toGBP(b.net_revenue, b.currency);
+          return sum + gbpAmount;
+        }, 0);
         monthlyIncome += saBookingRevenue;
         
-        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings this month = ${monthlyBookings.length}/${saBookings?.length || 0}, SA revenue = ${saBookingRevenue}`);
+        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings this month = ${monthlyBookings.length}/${saBookings?.length || 0}, SA revenue (GBP) = ${saBookingRevenue}`);
       }
 
       return {
@@ -166,10 +185,10 @@ router.get('/:id', async (req, res) => {
       const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
       const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
       
-      // Get ALL non-cancelled bookings for this property
+      // Get ALL non-cancelled bookings for this property with currency
       const { data: saBookings } = await req.supabase
         .from('sa_bookings')
-        .select('net_revenue, received_date, check_in, payment_status')
+        .select('net_revenue, received_date, check_in, payment_status, currency')
         .eq('property_id', id)
         .eq('landlord_id', req.landlord_id)
         .not('status', 'eq', 'cancelled');
@@ -187,7 +206,11 @@ router.get('/:id', async (req, res) => {
         return false;
       });
       
-      const saRevenue = monthlyBookings.reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
+      // Convert foreign currency to GBP
+      const saRevenue = monthlyBookings.reduce((sum, b) => {
+        const gbpAmount = toGBP(b.net_revenue, b.currency);
+        return sum + gbpAmount;
+      }, 0);
       monthlyIncome += saRevenue;
     }
 

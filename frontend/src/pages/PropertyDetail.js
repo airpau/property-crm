@@ -629,9 +629,9 @@ function PropertyDetail() {
       }, 0)
     : 0;
   
-  // Net after expenses and PM fees
+  // Net after expenses (PM fees now included in expenseSummary)
   const totalExpenses = expenseSummary.totalThisMonth || 0;
-  const netIncome = totalIncome - totalExpenses - monthlyPMFees;
+  const netIncome = totalIncome - totalExpenses;
 
   return (
     <div className="property-detail-container">

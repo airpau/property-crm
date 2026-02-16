@@ -151,15 +151,14 @@ function PropertyList() {
                     <div className="stat-label">Tenants</div>
                   </div>
                   <div className="property-stat">
-                    <div className="stat-number">£{property.monthly_income?.toLocaleString() || 0}</div>
+                    <div className="stat-number">£{Number(property.monthly_income || 0).toFixed(2)}</div>
                     <div className="stat-label">
                       Monthly Income{property.property_category === 'sa' ? ' (Inc. SA Bookings)' : ''}
                     </div>
                   </div>
                   <div className="property-stat net-income">
-                    {console.log(`[RENDER] ${property.name}: net_income=`, property.net_income, 'type:', typeof property.net_income)}
                     <div className={`stat-number ${(property.net_income || 0) >= 0 ? 'positive' : 'negative'}`}>
-                      £{(property.net_income || 0).toLocaleString()}
+                      £{Number(property.net_income || 0).toFixed(2)}
                     </div>
                     <div className="stat-label">Net (Income - Exp - PM)</div>
                   </div>

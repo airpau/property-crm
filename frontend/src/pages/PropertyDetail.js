@@ -124,6 +124,8 @@ function PropertyDetail() {
       // Get all expenses for this property
       const today = new Date();
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthStart = today.toISOString().split('T')[0].slice(0, 7) + '-01';
+      const monthEnd = today.toISOString().split('T')[0].slice(0, 7) + '-31';
       
       const response = await axios.get(
         `${API_URL}/api/expenses/property/${id}`,
@@ -163,6 +165,36 @@ function PropertyDetail() {
           summary.byCategory[expense.category] += amount;
         }
       });
+      
+      // Fetch SA bookings to calculate PM fees for this month
+      if (property?.property_category === 'sa') {
+        try {
+          const saResponse = await axios.get(
+            `${API_URL}/api/sa-bookings/property/${id}?startDate=${monthStart}&endDate=${monthEnd}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const bookings = saResponse.data || [];
+          
+          const thisMonthBookings = bookings.filter(b => {
+            if (b.status === 'cancelled') return false;
+            const checkIn = new Date(b.check_in);
+            return checkIn >= firstDayOfMonth;
+          });
+          
+          const pmFeesTotal = thisMonthBookings.reduce((sum, b) => {
+            const currency = b.currency || 'GBP';
+            const fxRate = currency === 'USD' ? 0.79 : currency === 'EUR' ? 0.83 : currency === 'CAD' ? 0.56 : currency === 'AUD' ? 0.49 : 1.0;
+            return sum + (parseFloat(b.total_pm_deduction) || 0) * fxRate;
+          }, 0);
+          
+          if (pmFeesTotal > 0) {
+            summary.totalThisMonth += pmFeesTotal;
+            summary.byCategory['Property Management'] = (summary.byCategory['Property Management'] || 0) + pmFeesTotal;
+          }
+        } catch (err) {
+          console.error('Error fetching PM fees:', err);
+        }
+      }
       
       // Calculate 6-month expense forecast
       const forecast = [];

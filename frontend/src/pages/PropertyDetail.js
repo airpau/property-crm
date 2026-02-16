@@ -273,21 +273,22 @@ function PropertyDetail() {
         pmDeductionsOriginal: 0  // Keep original currency amount
       };
       
-      const isUSD = property?.currency === 'USD';
       const fxRate = 0.79;  // USD to GBP
       
       bookings.forEach(booking => {
         if (booking.status !== 'cancelled') {
           const netRevenue = parseFloat(booking.net_revenue) || 0;
           const pmDeduction = parseFloat(booking.total_pm_deduction) || 0;
+          const bookingCurrency = booking.currency || 'GBP';
+          const isBookingUSD = bookingCurrency === 'USD';
           
           // Store original amounts (USD for OceanBliss)
           summary.confirmedRevenueOriginal += netRevenue;
           summary.pmDeductionsOriginal += pmDeduction;
           
           // Convert to GBP for calculations
-          const netRevenueGBP = isUSD ? netRevenue * fxRate : netRevenue;
-          const pmDeductionGBP = isUSD ? pmDeduction * fxRate : pmDeduction;
+          const netRevenueGBP = isBookingUSD ? netRevenue * fxRate : netRevenue;
+          const pmDeductionGBP = isBookingUSD ? pmDeduction * fxRate : pmDeduction;
           
           summary.confirmedRevenue += netRevenueGBP;
           summary.totalNights += parseInt(booking.total_nights) || 0;
@@ -693,7 +694,7 @@ function PropertyDetail() {
                     const checkIn = new Date(b.check_in);
                     return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
                   }).length} bookings this month
-                  {property.currency && property.currency !== 'GBP' && (
+                  {saBookings.some(b => b.currency === 'USD') && (
                     <div>{`$${(monthlySARevenue / 0.79).toFixed(0)} USD ≈ £${monthlySARevenue.toLocaleString()} GBP`}</div>
                   )}
                 </span>
@@ -705,7 +706,7 @@ function PropertyDetail() {
                 <div className="stat-value">−£{monthlyPMFees.toLocaleString()}</div>
                 <span className="card-hint">
                   {property.property_manager_name || 'Property Manager'}
-                  {property.currency && property.currency !== 'GBP' && ` • ${property.currency} ${(monthlyPMFees / (property.currency === 'USD' ? 0.79 : 1)).toFixed(0)}`}
+                  {saBookings.some(b => b.currency === 'USD') && ` • USD ${(monthlyPMFees / 0.79).toFixed(0)}`}
                 </span>
               </div>
             )}
@@ -727,10 +728,10 @@ function PropertyDetail() {
             <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
               <h4>Monthly Rental Income</h4>
               <div className="stat-value">£{totalIncome.toLocaleString()}</div>
-              {property.currency && property.currency !== 'GBP' && (
-                <span className="card-hint">${(totalIncome / 0.79).toFixed(0)} {property.currency} ≈ £{totalIncome.toLocaleString()} GBP</span>
+              {saBookings.some(b => b.currency === 'USD') && (
+                <span className="card-hint">${(totalIncome / 0.79).toFixed(0)} USD ≈ £{totalIncome.toLocaleString()} GBP</span>
               )}
-              {(!property.currency || property.currency === 'GBP') && (
+              {!saBookings.some(b => b.currency === 'USD') && (
                 <span className="card-action">View in Rent Tracker →</span>
               )}
             </div>
@@ -970,7 +971,7 @@ function PropertyDetail() {
               <div className="summary-card revenue">
                 <span className="summary-label">Confirmed Revenue</span>
                 <span className="summary-value">
-                  {property?.currency === 'USD' ? (
+                  {saBookings.some(b => b.currency === 'USD') ? (
                     <>
                       ${saSummary.confirmedRevenueOriginal.toLocaleString()} USD<br/>
                       <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.confirmedRevenue.toLocaleString()} GBP</small>
@@ -980,7 +981,7 @@ function PropertyDetail() {
                   )}
                 </span>
                 <span className="summary-hint">
-                  {property?.currency === 'USD' ? (
+                  {saBookings.some(b => b.currency === 'USD') ? (
                     saSummary.receivedRevenueOriginal > 0 ? 
                       `$${saSummary.receivedRevenueOriginal.toLocaleString()} received` : 
                       'Awaiting payouts'
@@ -995,7 +996,7 @@ function PropertyDetail() {
                 <div className="summary-card pm-deductions">
                   <span className="summary-label">PM Deductions</span>
                   <span className="summary-value">
-                    {property?.currency === 'USD' ? (
+                    {saBookings.some(b => b.currency === 'USD') ? (
                       <>
                         ${saSummary.pmDeductionsOriginal.toLocaleString()} USD<br/>
                         <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.pmDeductions.toLocaleString()} GBP</small>

@@ -213,11 +213,11 @@ router.get('/:id', async (req, res) => {
 
     // Calculate monthly income
     let monthlyIncome = formattedTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
+    const today = new Date();
     
     // For SA properties, add booking revenue for current month
     // Based on received_date (when payout arrives) or check_in if not yet marked as received
     if (property.property_category === 'sa') {
-      const today = new Date();
       const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
       const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
       
@@ -248,11 +248,75 @@ router.get('/:id', async (req, res) => {
         return sum + gbpAmount;
       }, 0);
       monthlyIncome += saRevenue;
+      
+      // Calculate PM fees for this month (in GBP)
+      const monthlyPMFees = monthlyBookings.reduce((sum, b) => {
+        // PM fee is total_gross - net_revenue
+        const grossAmount = toGBP(b.net_revenue, b.currency); // net in GBP
+        // Get total_pm_deduction if available, otherwise calculate
+        const pmDeduction = b.total_pm_deduction ? toGBP(b.total_pm_deduction, b.currency) : 0;
+        return sum + pmDeduction;
+      }, 0);
+      
+      // Get regular expenses for this property
+      const { data: expenses } = await req.supabase
+        .from('property_expenses')
+        .select('amount, frequency, expense_date')
+        .eq('property_id', id)
+        .eq('landlord_id', req.landlord_id);
+      
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      let regularExpenses = 0;
+      (expenses || []).forEach(expense => {
+        const amount = parseFloat(expense.amount) || 0;
+        if (expense.frequency === 'monthly' || expense.frequency === 'quarterly' || expense.frequency === 'annual') {
+          regularExpenses += amount;
+        } else {
+          const expenseDate = new Date(expense.expense_date);
+          if (expenseDate >= firstDayOfMonth) {
+            regularExpenses += amount;
+          }
+        }
+      });
+      
+      var totalExpenses = regularExpenses + monthlyPMFees;
+      var netIncome = monthlyIncome - totalExpenses;
+      var pmFees = monthlyPMFees;
+    } else {
+      // Non-SA properties - still need expenses
+      const { data: expenses } = await req.supabase
+        .from('property_expenses')
+        .select('amount, frequency, expense_date')
+        .eq('property_id', id)
+        .eq('landlord_id', req.landlord_id);
+      
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      let regularExpenses = 0;
+      (expenses || []).forEach(expense => {
+        const amount = parseFloat(expense.amount) || 0;
+        if (expense.frequency === 'monthly' || expense.frequency === 'quarterly' || expense.frequency === 'annual') {
+          regularExpenses += amount;
+        } else {
+          const expenseDate = new Date(expense.expense_date);
+          if (expenseDate >= firstDayOfMonth) {
+            regularExpenses += amount;
+          }
+        }
+      });
+      
+      var totalExpenses = regularExpenses;
+      var netIncome = monthlyIncome - totalExpenses;
+      var pmFees = 0;
     }
 
     res.json({
       ...property,
       monthly_income: monthlyIncome,
+      total_expenses: totalExpenses,
+      net_income: netIncome,
+      pm_fees: pmFees,
       sa_booking_revenue: property.property_category === 'sa' ? (monthlyIncome - formattedTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)) : undefined,
       tenancies: formattedTenancies,
       compliance: compliance || [],

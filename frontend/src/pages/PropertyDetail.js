@@ -603,7 +603,7 @@ function PropertyDetail() {
   
   // Net after expenses and PM fees
   const totalExpenses = expenseSummary.totalThisMonth || 0;
-  const netIncome = totalIncome - totalExpenses;
+  const netIncome = totalIncome - totalExpenses - monthlyPMFees;
 
   return (
     <div className="property-detail-container">

@@ -102,17 +102,24 @@ router.get('/', async (req, res) => {
       }
       
       // Get regular expenses for this property
-      const { data: expenses } = await req.supabase
+      const { data: expenses, error: expensesError } = await req.supabase
         .from('property_expenses')
         .select('amount, frequency, expense_date')
         .eq('property_id', p.id)
         .eq('landlord_id', req.landlord_id);
+      
+      if (expensesError) {
+        console.log(`[EXPENSES ERROR] ${p.name}:`, expensesError.message);
+      } else {
+        console.log(`[EXPENSES] ${p.name}: found ${expenses?.length || 0} expenses`);
+      }
       
       const today = new Date();
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       
       let regularExpenses = 0;
       (expenses || []).forEach(expense => {
+        console.log(`[EXPENSE] ${p.name}: £${expense.amount} ${expense.frequency} ${expense.expense_date}`);
         const amount = parseFloat(expense.amount) || 0;
         if (expense.frequency === 'monthly' || expense.frequency === 'quarterly' || expense.frequency === 'annual') {
           regularExpenses += amount;

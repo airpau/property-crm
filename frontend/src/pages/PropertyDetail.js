@@ -263,25 +263,42 @@ function PropertyDetail() {
       const summary = {
         totalBookings: bookings.length,
         confirmedRevenue: 0,
+        confirmedRevenueOriginal: 0,  // Keep original currency amount
         receivedRevenue: 0,
+        receivedRevenueOriginal: 0,
         pendingRevenue: 0,
+        pendingRevenueOriginal: 0,
         totalNights: 0,
-        pmDeductions: 0
+        pmDeductions: 0,
+        pmDeductionsOriginal: 0  // Keep original currency amount
       };
+      
+      const isUSD = property?.currency === 'USD';
+      const fxRate = 0.79;  // USD to GBP
       
       bookings.forEach(booking => {
         if (booking.status !== 'cancelled') {
           const netRevenue = parseFloat(booking.net_revenue) || 0;
           const pmDeduction = parseFloat(booking.total_pm_deduction) || 0;
           
-          summary.confirmedRevenue += netRevenue;
+          // Store original amounts (USD for OceanBliss)
+          summary.confirmedRevenueOriginal += netRevenue;
+          summary.pmDeductionsOriginal += pmDeduction;
+          
+          // Convert to GBP for calculations
+          const netRevenueGBP = isUSD ? netRevenue * fxRate : netRevenue;
+          const pmDeductionGBP = isUSD ? pmDeduction * fxRate : pmDeduction;
+          
+          summary.confirmedRevenue += netRevenueGBP;
           summary.totalNights += parseInt(booking.total_nights) || 0;
-          summary.pmDeductions += pmDeduction;
+          summary.pmDeductions += pmDeductionGBP;
           
           if (booking.payment_status === 'received') {
-            summary.receivedRevenue += netRevenue;
+            summary.receivedRevenue += netRevenueGBP;
+            summary.receivedRevenueOriginal += netRevenue;
           } else {
-            summary.pendingRevenue += netRevenue;
+            summary.pendingRevenue += netRevenueGBP;
+            summary.pendingRevenueOriginal += netRevenue;
           }
         }
       });
@@ -952,13 +969,41 @@ function PropertyDetail() {
               </div>
               <div className="summary-card revenue">
                 <span className="summary-label">Confirmed Revenue</span>
-                <span className="summary-value">£{saSummary.confirmedRevenue.toLocaleString()}</span>
-                <span className="summary-hint">{saSummary.receivedRevenue > 0 ? `£${saSummary.receivedRevenue.toLocaleString()} received` : 'Awaiting payouts'}</span>
+                <span className="summary-value">
+                  {property?.currency === 'USD' ? (
+                    <>
+                      ${saSummary.confirmedRevenueOriginal.toLocaleString()} USD<br/>
+                      <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.confirmedRevenue.toLocaleString()} GBP</small>
+                    </>
+                  ) : (
+                    `£${saSummary.confirmedRevenue.toLocaleString()}`
+                  )}
+                </span>
+                <span className="summary-hint">
+                  {property?.currency === 'USD' ? (
+                    saSummary.receivedRevenueOriginal > 0 ? 
+                      `$${saSummary.receivedRevenueOriginal.toLocaleString()} received` : 
+                      'Awaiting payouts'
+                  ) : (
+                    saSummary.receivedRevenue > 0 ? 
+                      `£${saSummary.receivedRevenue.toLocaleString()} received` : 
+                      'Awaiting payouts'
+                  )}
+                </span>
               </div>
               {property?.is_managed && saSummary.pmDeductions > 0 && (
                 <div className="summary-card pm-deductions">
                   <span className="summary-label">PM Deductions</span>
-                  <span className="summary-value">£{saSummary.pmDeductions.toLocaleString()}</span>
+                  <span className="summary-value">
+                    {property?.currency === 'USD' ? (
+                      <>
+                        ${saSummary.pmDeductionsOriginal.toLocaleString()} USD<br/>
+                        <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.pmDeductions.toLocaleString()} GBP</small>
+                      </>
+                    ) : (
+                      `£${saSummary.pmDeductions.toLocaleString()}`
+                    )}
+                  </span>
                   <span className="summary-hint">{property?.property_manager_name || 'Property Manager'}</span>
                 </div>
               )}
@@ -1058,7 +1103,15 @@ function PropertyDetail() {
                                 {booking.pm_payment_status === 'paid' ? (
                                   <small className="pm-paid">PM Paid</small>
                                 ) : (
-                                  <small className="pm-owed">PM Owed: {booking.currency === 'GBP' ? '£' : '$'}{booking.total_pm_deduction}</small>
+                                  <small className="pm-owed">
+                                    {booking.currency === 'USD' ? (
+                                      <>
+                                        PM Owed: ${booking.total_pm_deduction} ≈ £{(booking.total_pm_deduction * 0.79).toFixed(0)}
+                                      </>
+                                    ) : (
+                                      `PM Owed: ${booking.currency === 'GBP' ? '£' : ''}${booking.total_pm_deduction}`
+                                    )}
+                                  </small>
                                 )}
                               </div>
                             )}

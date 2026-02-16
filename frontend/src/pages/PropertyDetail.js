@@ -676,7 +676,9 @@ function PropertyDetail() {
                     const checkIn = new Date(b.check_in);
                     return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
                   }).length} bookings this month
-                  {property.currency && property.currency !== 'GBP' && ` (converted from ${property.currency})`}
+                  {property.currency && property.currency !== 'GBP' && (
+                    <div>{`$${(monthlySARevenue / 0.79).toFixed(0)} USD ≈ £${monthlySARevenue.toLocaleString()} GBP`}</div>
+                  )}
                 </span>
               </div>
             )}
@@ -684,7 +686,10 @@ function PropertyDetail() {
               <div className="stat-card warning">
                 <h4>🏢 PM Fees</h4>
                 <div className="stat-value">−£{monthlyPMFees.toLocaleString()}</div>
-                <span className="card-hint">{property.property_manager_name || 'Property Manager'}</span>
+                <span className="card-hint">
+                  {property.property_manager_name || 'Property Manager'}
+                  {property.currency && property.currency !== 'GBP' && ` • ${property.currency} ${(monthlyPMFees / (property.currency === 'USD' ? 0.79 : 1)).toFixed(0)}`}
+                </span>
               </div>
             )}
             <div className="stat-card expense">
@@ -705,7 +710,12 @@ function PropertyDetail() {
             <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
               <h4>Monthly Rental Income</h4>
               <div className="stat-value">£{totalIncome.toLocaleString()}</div>
-              <span className="card-action">View in Rent Tracker →</span>
+              {property.currency && property.currency !== 'GBP' && (
+                <span className="card-hint">${(totalIncome / 0.79).toFixed(0)} {property.currency} ≈ £{totalIncome.toLocaleString()} GBP</span>
+              )}
+              {(!property.currency || property.currency === 'GBP') && (
+                <span className="card-action">View in Rent Tracker →</span>
+              )}
             </div>
             <div className="stat-card">
               <h4>Active Tenancies</h4>

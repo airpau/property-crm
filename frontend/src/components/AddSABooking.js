@@ -12,9 +12,18 @@ const PLATFORMS = [
   { value: 'other', label: '📝 Other', color: '#6b7280' }
 ];
 
+const CURRENCY_SYMBOLS = {
+  GBP: '£',
+  USD: '$',
+  EUR: '€',
+  CAD: 'C$',
+  AUD: 'A$'
+};
+
 function AddSABooking({ property, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hasEditedGross, setHasEditedGross] = useState(false);
   
   const [booking, setBooking] = useState({
     reservation_id: '',
@@ -33,7 +42,8 @@ function AddSABooking({ property, onClose, onSuccess }) {
     net_revenue: '',
     status: 'confirmed',
     payment_status: 'pending',
-    notes: ''
+    notes: '',
+    currency: property?.currency || 'GBP'
   });
   
   // Calculate nights from dates
@@ -51,7 +61,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
         }));
         
         // Auto-suggest gross if user hasn't entered it manually
-        if (!prev.gross_booking_value && prev.nightly_rate) {
+        if (!hasEditedGross && !prev.gross_booking_value && prev.nightly_rate) {
           const suggested = (nights * parseFloat(prev.nightly_rate)).toFixed(2);
           setBooking(prev => ({
             ...prev,
@@ -61,7 +71,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
         }
       }
     }
-  }, [booking.check_in, booking.check_out, booking.nightly_rate]);
+  }, [hasEditedGross, booking.check_in, booking.check_out, booking.nightly_rate]);
   
   // Recalculate net revenue when any value changes
   useEffect(() => {
@@ -78,6 +88,9 @@ function AddSABooking({ property, onClose, onSuccess }) {
   
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'gross_booking_value') {
+      setHasEditedGross(true);
+    }
     setBooking(prev => ({ ...prev, [name]: value }));
   };
   
@@ -233,6 +246,25 @@ function AddSABooking({ property, onClose, onSuccess }) {
             </div>
             
             <div className="form-row">
+              <div className="form-group" style={{flex: '0 0 150px'}}>
+                <label>Currency *</label>
+                <select
+                  name="currency"
+                  value={booking.currency}
+                  onChange={handleChange}
+                  required
+                  className="currency-select"
+                >
+                  <option value="GBP">🇬🇧 GBP (£)</option>
+                  <option value="USD">🇺🇸 USD ($)</option>
+                  <option value="EUR">🇪🇺 EUR (€)</option>
+                  <option value="CAD">🇨🇦 CAD ($)</option>
+                  <option value="AUD">🇦🇺 AUD ($)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="form-row">
               <div className="form-group">
                 <label>Check-in Date *</label>
                 <input
@@ -288,7 +320,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
             
             <div className="form-row">
               <div className="form-group">
-                <label>Nightly Rate (£)</label>
+                <label>Nightly Rate ({CURRENCY_SYMBOLS[booking.currency]})</label>
                 <input
                   type="number"
                   name="nightly_rate"
@@ -301,7 +333,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
               </div>
               
               <div className="form-group">
-                <label>Gross Booking Value (£) *</label>
+                <label>Gross Booking Value ({CURRENCY_SYMBOLS[booking.currency]}) *</label>
                 <div style={{display: 'flex', gap: '8px'}}>
                   <input
                     type="number"
@@ -330,7 +362,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
             
             <div className="form-row">
               <div className="form-group">
-                <label>Platform Fee (£)</label>
+                <label>Platform Fee ({CURRENCY_SYMBOLS[booking.currency]})</label>
                 <input
                   type="number"
                   name="platform_fee"
@@ -343,7 +375,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
               </div>
               
               <div className="form-group">
-                <label>Cleaning Fee Paid (£)</label>
+                <label>Cleaning Fee Paid ({CURRENCY_SYMBOLS[booking.currency]})</label>
                 <div style={{display: 'flex', gap: '8px'}}>
                   <input
                     type="number"
@@ -371,7 +403,7 @@ function AddSABooking({ property, onClose, onSuccess }) {
             
             <div className="form-row">
               <div className="form-group">
-                <label>Net Revenue (£)</label>
+                <label>Net Revenue ({CURRENCY_SYMBOLS[booking.currency]})</label>
                 <input
                   type="number"
                   name="net_revenue"

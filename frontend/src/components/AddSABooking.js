@@ -55,20 +55,16 @@ function AddSABooking({ property, onClose, onSuccess }) {
       const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
       if (nights > 0) {
-        setBooking(prev => ({
-          ...prev,
-          total_nights: nights
-        }));
-        
-        // Auto-suggest gross if user hasn't entered it manually
-        if (!hasEditedGross && !prev.gross_booking_value && prev.nightly_rate) {
-          const suggested = (nights * parseFloat(prev.nightly_rate)).toFixed(2);
-          setBooking(prev => ({
-            ...prev,
-            total_nights: nights,
-            gross_booking_value: suggested
-          }));
-        }
+        setBooking(prev => {
+          const updated = { ...prev, total_nights: nights };
+          
+          // Auto-suggest gross if user hasn't entered it manually
+          if (!hasEditedGross && !prev.gross_booking_value && prev.nightly_rate) {
+            updated.gross_booking_value = (nights * parseFloat(prev.nightly_rate)).toFixed(2);
+          }
+          
+          return updated;
+        });
       }
     }
   }, [hasEditedGross, booking.check_in, booking.check_out, booking.nightly_rate]);

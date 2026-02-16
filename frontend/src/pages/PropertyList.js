@@ -151,7 +151,9 @@ function PropertyList() {
                   </div>
                   <div className="property-stat">
                     <div className="stat-number">£{property.monthly_income?.toLocaleString() || 0}</div>
-                    <div className="stat-label">Monthly Income</div>
+                    <div className="stat-label">
+                      Monthly Income{property.property_category === 'sa' ? ' (Inc. SA Bookings)' : ''}
+                    </div>
                   </div>
                   <div className="property-stat net-income">
                     <div className={`stat-number ${(property.monthly_income || 0) - (propertyExpenses[property.id] || 0) >= 0 ? 'positive' : 'negative'}`}>

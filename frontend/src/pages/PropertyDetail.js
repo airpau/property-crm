@@ -571,7 +571,10 @@ function PropertyDetail() {
   const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   
-  // Calculate SA booking revenue for current month
+  // Use API-calculated monthly_income which already includes SA booking revenue
+  const totalIncome = property?.monthly_income || 0;
+  
+  // Calculate SA booking revenue for current month from saBookings array
   const monthlySARevenue = property?.property_category === 'sa' 
     ? (saBookings || []).reduce((sum, booking) => {
         if (booking.status === 'cancelled') return sum;
@@ -583,10 +586,8 @@ function PropertyDetail() {
       }, 0)
     : 0;
   
-  // Calculate total rental income from active tenancies that have STARTED
-  const tenancyIncome = property?.tenancies
-    ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)
-    ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
+  // Calculate tenancy income (monthly_income minus SA revenue)
+  const tenancyIncome = totalIncome - monthlySARevenue;
   
   // Calculate PM fees for current month's bookings
   const monthlyPMFees = property?.property_category === 'sa'
@@ -600,12 +601,9 @@ function PropertyDetail() {
       }, 0)
     : 0;
   
-  // Total income = tenancy income + SA booking revenue for this month
-  const totalIncome = tenancyIncome + monthlySARevenue;
-  
   // Net after expenses and PM fees
   const totalExpenses = expenseSummary.totalThisMonth || 0;
-  const netIncome = monthlySARevenue - totalExpenses - monthlyPMFees;
+  const netIncome = totalIncome - totalExpenses;
 
   return (
     <div className="property-detail-container">
@@ -635,14 +633,25 @@ function PropertyDetail() {
         {property?.property_category === 'sa' ? (
           <>
             <div className="stat-card income">
-              <h4>💰 Gross Revenue</h4>
-              <div className="stat-value">£{monthlySARevenue.toLocaleString()}</div>
-              <span className="card-hint">{saBookings.filter(b => {
-                if (b.status === 'cancelled') return false;
-                const checkIn = new Date(b.check_in);
-                return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
-              }).length} bookings this month</span>
+              <h4>💰 Total Monthly Income</h4>
+              <div className="stat-value">£{totalIncome.toLocaleString()}</div>
+              <span className="card-hint">
+                {tenancyIncome > 0 ? `£${tenancyIncome.toLocaleString()} rent + £${monthlySARevenue.toLocaleString()} SA` : 'All from SA bookings'}
+              </span>
             </div>
+            {monthlySARevenue > 0 && (
+              <div className="stat-card" style={{background: '#f0f9ff', borderColor: '#3b82f6'}}>
+                <h4 style={{color: '#1e40af'}}>✈️ SA Bookings</h4>
+                <div className="stat-value" style={{color: '#2563eb'}}>£{monthlySARevenue.toLocaleString()}</div>
+                <span className="card-hint">
+                  {saBookings.filter(b => {
+                    if (b.status === 'cancelled') return false;
+                    const checkIn = new Date(b.check_in);
+                    return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
+                  }).length} bookings this month
+                </span>
+              </div>
+            )}
             {property.is_managed && monthlyPMFees > 0 && (
               <div className="stat-card warning">
                 <h4>🏢 PM Fees</h4>
@@ -660,7 +669,7 @@ function PropertyDetail() {
               <div className="stat-value">
                 {netIncome >= 0 ? '+' : '−'}£{Math.abs(netIncome).toLocaleString()}
               </div>
-              <span className="card-hint">Revenue − PM Fees − Expenses</span>
+              <span className="card-hint">Income − Expenses {monthlyPMFees > 0 ? '− PM Fees' : ''}</span>
             </div>
           </>
         ) : (

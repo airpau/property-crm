@@ -616,6 +616,15 @@ function PropertyDetail() {
     ? property.net_income 
     : (totalIncome - totalExpenses);
   
+  console.log('[PropertyDetail] API values:', {
+    name: property?.name,
+    monthly_income: property?.monthly_income,
+    total_expenses: property?.total_expenses,
+    pm_fees: property?.pm_fees,
+    net_income: property?.net_income,
+    calculated_net: totalIncome - totalExpenses
+  });
+  
   // Calculate breakdown values for display only
   const tenancyIncome = property?.tenancies
     ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)

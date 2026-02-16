@@ -574,28 +574,24 @@ function PropertyDetail() {
   // Use API-calculated monthly_income which already includes SA booking revenue
   const totalIncome = property?.monthly_income || 0;
   
-  // Calculate SA booking revenue for current month from saBookings array
-  const monthlySARevenue = property?.property_category === 'sa' 
-    ? (saBookings || []).reduce((sum, booking) => {
-        if (booking.status === 'cancelled') return sum;
-        const checkIn = new Date(booking.check_in);
-        if (checkIn >= currentMonthStart && checkIn <= currentMonthEnd) {
-          return sum + (parseFloat(booking.net_revenue) || 0);
-        }
-        return sum;
-      }, 0)
-    : 0;
+  // Calculate SA booking revenue from API-calculated monthly_income
+  // monthly_income already includes FX conversion to GBP from backend
+  const tenancyIncome = property?.tenancies
+    ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)
+    ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
   
-  // Calculate tenancy income (monthly_income minus SA revenue)
-  const tenancyIncome = totalIncome - monthlySARevenue;
+  const monthlySARevenue = (property?.monthly_income || 0) - tenancyIncome;
   
-  // Calculate PM fees for current month's bookings
+  // Calculate PM fees from local saBookings (PM fees are in property currency, not converted)
   const monthlyPMFees = property?.property_category === 'sa'
     ? (saBookings || []).reduce((sum, booking) => {
         if (booking.status === 'cancelled') return sum;
         const checkIn = new Date(booking.check_in);
         if (checkIn >= currentMonthStart && checkIn <= currentMonthEnd) {
-          return sum + (parseFloat(booking.total_pm_deduction) || 0);
+          // Convert PM fee from booking currency to GBP
+          const currency = booking.currency || 'GBP';
+          const fxRate = currency === 'USD' ? 0.79 : currency === 'EUR' ? 0.83 : currency === 'CAD' ? 0.56 : currency === 'AUD' ? 0.49 : 1.0;
+          return sum + (parseFloat(booking.total_pm_deduction) || 0) * fxRate;
         }
         return sum;
       }, 0)

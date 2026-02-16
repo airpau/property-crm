@@ -126,6 +126,8 @@ router.get('/', async (req, res) => {
       
       const totalExpenses = regularExpenses + monthlyPMFees;
       const netIncome = monthlyIncome - totalExpenses;
+      
+      console.log(`[LIST] ${p.name}: income=£${monthlyIncome.toFixed(2)}, expenses=£${regularExpenses.toFixed(2)}, pm=£${monthlyPMFees.toFixed(2)}, total=£${totalExpenses.toFixed(2)}, net=£${netIncome.toFixed(2)}`);
 
       return {
         ...p,

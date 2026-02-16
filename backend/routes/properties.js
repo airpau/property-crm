@@ -242,7 +242,7 @@ router.get('/:id', async (req, res) => {
       // Get ALL non-cancelled bookings for this property with currency
       const { data: saBookings } = await req.supabase
         .from('sa_bookings')
-        .select('net_revenue, received_date, check_in, payment_status, currency')
+        .select('net_revenue, received_date, check_in, payment_status, currency, total_pm_deduction')
         .eq('property_id', id)
         .eq('landlord_id', req.landlord_id)
         .not('status', 'eq', 'cancelled');

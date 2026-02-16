@@ -171,8 +171,8 @@ function PropertyList() {
           {/* Portfolio Summary */}
           {(() => {
             const totalIncome = properties.reduce((sum, p) => sum + (p.monthly_income || 0), 0);
-            const totalExpenses = properties.reduce((sum, p) => sum + (propertyExpenses[p.id] || 0), 0);
-            const totalNet = totalIncome - totalExpenses;
+            const totalExpenses = properties.reduce((sum, p) => sum + (p.total_expenses || 0), 0);  // Use API value with PM fees
+            const totalNet = properties.reduce((sum, p) => sum + (p.net_income || 0), 0);  // Use API calculated net
             
             return (
               <div className="portfolio-summary">
@@ -188,7 +188,7 @@ function PropertyList() {
                   </div>
                   <div className={`portfolio-stat ${totalNet >= 0 ? 'positive' : 'negative'}`}>
                     <div className={`stat-value ${totalNet >= 0 ? 'positive' : 'negative'}`}>
-                      £{totalNet.toLocaleString()}
+                      £{totalNet.toFixed(2)}  {/* Fixed to 2 decimal places */}
                     </div>
                     <div className="stat-name">Total Net Income</div>
                     <div className="stat-hint">Across {properties.length} properties</div>

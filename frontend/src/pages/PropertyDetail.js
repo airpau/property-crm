@@ -124,8 +124,11 @@ function PropertyDetail() {
       // Get all expenses for this property
       const today = new Date();
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const monthStart = today.toISOString().split('T')[0].slice(0, 7) + '-01';
-      const monthEnd = today.toISOString().split('T')[0].slice(0, 7) + '-31';
+      const yearMonth = today.toISOString().split('T')[0].slice(0, 7);
+      const monthStart = yearMonth + '-01';
+      // Get actual last day of month
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      const monthEnd = `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
       
       const response = await axios.get(
         `${API_URL}/api/expenses/property/${id}`,

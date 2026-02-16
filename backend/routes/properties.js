@@ -61,8 +61,12 @@ router.get('/', async (req, res) => {
       // Based on received_date (when payout arrives) or check_in if not yet marked as received
       if (p.property_category === 'sa') {
         const today = new Date();
-        const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-        const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+        // Get actual last day of month
+        const lastDay = new Date(year, month, 0).getDate();
+        const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
         
         // Get all non-cancelled bookings for this property with currency
         const { data: saBookings } = await req.supabase
@@ -227,8 +231,12 @@ router.get('/:id', async (req, res) => {
     // For SA properties, add booking revenue for current month
     // Based on received_date (when payout arrives) or check_in if not yet marked as received
     if (property.property_category === 'sa') {
-      const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-      const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+      // Get actual last day of month
+      const lastDay = new Date(year, month, 0).getDate();
+      const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       
       // Get ALL non-cancelled bookings for this property with currency
       const { data: saBookings } = await req.supabase

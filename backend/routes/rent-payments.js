@@ -177,7 +177,7 @@ router.post('/generate', async (req, res) => {
     let paymentsToInsert = [];
 
     // ========= PART 1: TENANCY PAYMENTS =========
-    // Get all active tenancies
+    // Get all active tenancies that have started (start_date <= end of current month)
     const { data: tenancies, error: tenancyError } = await req.supabase
       .from('tenancies')
       .select(`
@@ -185,13 +185,22 @@ router.post('/generate', async (req, res) => {
         landlord_id,
         property_id,
         rent_amount,
-        rent_due_day
+        rent_due_day,
+        start_date,
+        end_date
       `)
       .eq('landlord_id', req.landlord_id)
       .eq('status', 'active')
+      .lte('start_date', monthEnd)  // Only tenancies that have started
       .is('deleted_at', null);
 
     if (tenancyError) throw tenancyError;
+    
+    // Filter tenancies: only include if start_date is in or before current month
+    const activeTenancies = (tenancies || []).filter(t => {
+      const tenancyStart = new Date(t.start_date);
+      return tenancyStart <= endOfMonth;  // Tenancy must have started by end of this month
+    });
 
     // Get existing tenancy payments for this month
     const { data: existingTenancyPayments, error: tenancyPaymentError } = await req.supabase
@@ -208,7 +217,7 @@ router.post('/generate', async (req, res) => {
     const tenancyIdsWithPayments = new Set((existingTenancyPayments || []).map(p => p.tenancy_id));
 
     // Filter out tenancies that already have payments this month
-    const tenanciesNeedingPayments = (tenancies || []).filter(t => {
+    const tenanciesNeedingPayments = activeTenancies.filter(t => {
       return !tenancyIdsWithPayments.has(t.id);
     });
 

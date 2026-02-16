@@ -42,24 +42,37 @@ router.get('/', async (req, res) => {
       const activeTenants = activeTenancies.reduce((count, t) => count + (t.tenancy_tenants?.length || 0), 0);
       
       // For SA properties, also include booking revenue for current month
+      // Based on received_date (when payout arrives) or check_in if not yet marked as received
       if (p.property_category === 'sa') {
         const today = new Date();
         const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
         const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-31`;
         
+        // Get all non-cancelled bookings for this property
         const { data: saBookings } = await req.supabase
           .from('sa_bookings')
-          .select('net_revenue')
+          .select('net_revenue, received_date, check_in, payment_status')
           .eq('property_id', p.id)
           .eq('landlord_id', req.landlord_id)
-          .gte('check_in', monthStart)
-          .lte('check_in', monthEnd)
           .not('status', 'eq', 'cancelled');
         
-        saBookingRevenue = (saBookings || []).reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
+        // Filter bookings: count if received_date is this month, OR check_in is this month (if not yet received)
+        const monthlyBookings = (saBookings || []).filter(b => {
+          // If payment was received this month, count it
+          if (b.received_date && b.received_date >= monthStart && b.received_date <= monthEnd) {
+            return true;
+          }
+          // If check_in is this month and payment is pending (not yet received), count as expected income
+          if (b.check_in >= monthStart && b.check_in <= monthEnd && b.payment_status === 'pending') {
+            return true;
+          }
+          return false;
+        });
+        
+        saBookingRevenue = monthlyBookings.reduce((sum, b) => sum + parseFloat(b.net_revenue || 0), 0);
         monthlyIncome += saBookingRevenue;
         
-        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings = ${saBookings?.length || 0}, SA revenue = ${saBookingRevenue}`);
+        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings this month = ${monthlyBookings.length}/${saBookings?.length || 0}, SA revenue = ${saBookingRevenue}`);
       }
 
       return {

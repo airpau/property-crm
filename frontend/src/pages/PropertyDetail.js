@@ -614,13 +614,12 @@ function PropertyDetail() {
   
   const monthlySARevenue = (property?.monthly_income || 0) - tenancyIncome;
   
-  // Calculate PM fees from local saBookings (PM fees are in property currency, not converted)
+  // Calculate PM fees from saBookings state
   const monthlyPMFees = property?.property_category === 'sa'
     ? (saBookings || []).reduce((sum, booking) => {
         if (booking.status === 'cancelled') return sum;
         const checkIn = new Date(booking.check_in);
         if (checkIn >= currentMonthStart && checkIn <= currentMonthEnd) {
-          // Convert PM fee from booking currency to GBP
           const currency = booking.currency || 'GBP';
           const fxRate = currency === 'USD' ? 0.79 : currency === 'EUR' ? 0.83 : currency === 'CAD' ? 0.56 : currency === 'AUD' ? 0.49 : 1.0;
           return sum + (parseFloat(booking.total_pm_deduction) || 0) * fxRate;
@@ -629,9 +628,9 @@ function PropertyDetail() {
       }, 0)
     : 0;
   
-  // Net after expenses (PM fees now included in expenseSummary)
+  // Net after expenses AND PM fees (always subtract both)
   const totalExpenses = expenseSummary.totalThisMonth || 0;
-  const netIncome = totalIncome - totalExpenses;
+  const netIncome = totalIncome - totalExpenses - monthlyPMFees;
 
   return (
     <div className="property-detail-container">
@@ -690,8 +689,8 @@ function PropertyDetail() {
             )}
             <div className="stat-card expense">
               <h4>📉 Expenses</h4>
-              <div className="stat-value">−£{totalExpenses.toLocaleString()}</div>
-              <span className="card-hint">This property</span>
+              <div className="stat-value">−£{(totalExpenses + monthlyPMFees).toLocaleString()}</div>
+              <span className="card-hint">£{totalExpenses.toLocaleString()} expenses + £{monthlyPMFees.toLocaleString()} PM fees</span>
             </div>
             <div className={`stat-card ${netIncome >= 0 ? 'profit' : 'loss'}`}>
               <h4>{netIncome >= 0 ? '📈 Your Net' : '📉 Net Loss'}</h4>

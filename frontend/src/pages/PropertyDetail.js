@@ -1376,13 +1376,13 @@ function PropertyDetail() {
           </div>
 
           {/* Profit/Loss Card */}
-          <div className={`profit-loss-card ${totalIncome - expenseSummary.totalThisMonth >= 0 ? 'profit' : 'loss'}`}>
+          <div className={`profit-loss-card ${netIncome >= 0 ? 'profit' : 'loss'}`}>
             <h3>📊 This Month</h3>
             <div className="amount">
-              {totalIncome - expenseSummary.totalThisMonth >= 0 ? '+' : ''}£{(totalIncome - expenseSummary.totalThisMonth).toLocaleString()}
+              {netIncome >= 0 ? '+' : ''}£{netIncome.toLocaleString()}
             </div>
             <div className="breakdown">
-              💵 Income: £{totalIncome.toLocaleString()} | 📉 Expenses: £{expenseSummary.totalThisMonth.toLocaleString()}
+              💵 Income: £{totalIncome.toLocaleString()} | 📉 Expenses: £{totalExpenses.toLocaleString()}
             </div>
           </div>
 

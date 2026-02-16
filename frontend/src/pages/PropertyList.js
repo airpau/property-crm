@@ -30,6 +30,7 @@ function PropertyList() {
       });
       
       console.log('Properties loaded:', response.data.length);
+      console.log('First property data:', response.data[0]);
       setProperties(response.data);
       
       // Fetch expenses for all properties
@@ -156,6 +157,7 @@ function PropertyList() {
                     </div>
                   </div>
                   <div className="property-stat net-income">
+                    {console.log(`[RENDER] ${property.name}: net_income=`, property.net_income, 'type:', typeof property.net_income)}
                     <div className={`stat-number ${(property.net_income || 0) >= 0 ? 'positive' : 'negative'}`}>
                       £{(property.net_income || 0).toLocaleString()}
                     </div>

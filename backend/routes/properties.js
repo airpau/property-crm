@@ -106,8 +106,7 @@ router.get('/', async (req, res) => {
         .from('property_expenses')
         .select('amount, frequency, expense_date')
         .eq('property_id', p.id)
-        .eq('landlord_id', req.landlord_id)
-        .is('deleted_at', null);
+        .eq('landlord_id', req.landlord_id);
       
       const today = new Date();
       const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);

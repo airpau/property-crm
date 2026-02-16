@@ -156,10 +156,10 @@ function PropertyList() {
                     </div>
                   </div>
                   <div className="property-stat net-income">
-                    <div className={`stat-number ${(property.monthly_income || 0) - (propertyExpenses[property.id] || 0) >= 0 ? 'positive' : 'negative'}`}>
-                      £{((property.monthly_income || 0) - (propertyExpenses[property.id] || 0)).toLocaleString()}
+                    <div className={`stat-number ${(property.net_income || 0) >= 0 ? 'positive' : 'negative'}`}>
+                      £{(property.net_income || 0).toLocaleString()}
                     </div>
-                    <div className="stat-label">Net (Income - Expenses)</div>
+                    <div className="stat-label">Net (Income - Exp - PM)</div>
                   </div>
                 </div>
               </Link>

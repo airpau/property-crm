@@ -54,9 +54,10 @@ router.get('/', async (req, res) => {
       const activeTenancies = p.tenancies?.filter(t => t.status === 'active') || [];
       let monthlyIncome = activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0);
       let saBookingRevenue = 0;
+      let monthlyPMFees = 0;
       const activeTenants = activeTenancies.reduce((count, t) => count + (t.tenancy_tenants?.length || 0), 0);
       
-      // For SA properties, also include booking revenue for current month
+      // For SA properties, also include booking revenue and PM fees for current month
       // Based on received_date (when payout arrives) or check_in if not yet marked as received
       if (p.property_category === 'sa') {
         const today = new Date();
@@ -66,7 +67,7 @@ router.get('/', async (req, res) => {
         // Get all non-cancelled bookings for this property with currency
         const { data: saBookings } = await req.supabase
           .from('sa_bookings')
-          .select('net_revenue, received_date, check_in, payment_status, currency')
+          .select('net_revenue, received_date, check_in, payment_status, currency, total_pm_deduction')
           .eq('property_id', p.id)
           .eq('landlord_id', req.landlord_id)
           .not('status', 'eq', 'cancelled');
@@ -91,15 +92,51 @@ router.get('/', async (req, res) => {
         }, 0);
         monthlyIncome += saBookingRevenue;
         
-        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings this month = ${monthlyBookings.length}/${saBookings?.length || 0}, SA revenue (GBP) = ${saBookingRevenue}`);
+        // Calculate PM fees for this month (converted to GBP)
+        monthlyPMFees = monthlyBookings.reduce((sum, b) => {
+          const gbpAmount = toGBP(b.total_pm_deduction, b.currency);
+          return sum + gbpAmount;
+        }, 0);
+        
+        console.log(`[DEBUG] Property ${p.name}: tenancy income = ${activeTenancies.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0)}, SA bookings this month = ${monthlyBookings.length}/${saBookings?.length || 0}, SA revenue (GBP) = ${saBookingRevenue}, PM fees (GBP) = ${monthlyPMFees}`);
       }
+      
+      // Get regular expenses for this property
+      const { data: expenses } = await req.supabase
+        .from('property_expenses')
+        .select('amount, frequency, expense_date')
+        .eq('property_id', p.id)
+        .eq('landlord_id', req.landlord_id)
+        .is('deleted_at', null);
+      
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      let regularExpenses = 0;
+      (expenses || []).forEach(expense => {
+        const amount = parseFloat(expense.amount) || 0;
+        if (expense.frequency === 'monthly' || expense.frequency === 'quarterly' || expense.frequency === 'annual') {
+          regularExpenses += amount;
+        } else {
+          const expenseDate = new Date(expense.expense_date);
+          if (expenseDate >= firstDayOfMonth) {
+            regularExpenses += amount;
+          }
+        }
+      });
+      
+      const totalExpenses = regularExpenses + monthlyPMFees;
+      const netIncome = monthlyIncome - totalExpenses;
 
       return {
         ...p,
         active_tenancies: activeTenancies.length,
         active_tenants: activeTenants,
         monthly_income: monthlyIncome,
-        sa_booking_revenue: p.property_category === 'sa' ? saBookingRevenue : undefined
+        total_expenses: totalExpenses,
+        net_income: netIncome,
+        sa_booking_revenue: p.property_category === 'sa' ? saBookingRevenue : 0,
+        pm_fees: p.property_category === 'sa' ? monthlyPMFees : 0
       };
     }));
 

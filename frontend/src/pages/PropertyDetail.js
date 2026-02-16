@@ -1389,6 +1389,12 @@ function PropertyDetail() {
                 <div className="label">One-off</div>
                 <div className="value">£{expenseSummary.oneOff.toLocaleString()}</div>
               </div>
+              {expenseSummary.byCategory['Property Management'] > 0 && (
+                <div className="summary-item">
+                  <div className="label">PM Fees</div>
+                  <div className="value">£{expenseSummary.byCategory['Property Management'].toLocaleString()}</div>
+                </div>
+              )}
               <div className="summary-item">
                 <div className="label">Total</div>
                 <div className="value negative">£{expenseSummary.totalThisMonth.toLocaleString()}</div>

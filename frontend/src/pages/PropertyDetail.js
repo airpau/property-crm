@@ -603,34 +603,20 @@ function PropertyDetail() {
   const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   
-  // Use API-calculated monthly_income which already includes SA booking revenue
+  // Use API-calculated values directly for reliability
   const totalIncome = property?.monthly_income || 0;
+  const totalExpenses = (property?.total_expenses || 0);
+  const netIncome = property?.net_income || (totalIncome - totalExpenses);
   
-  // Calculate SA booking revenue from API-calculated monthly_income
-  // monthly_income already includes FX conversion to GBP from backend
+  // Calculate breakdown values for display only
   const tenancyIncome = property?.tenancies
     ?.filter(t => t.status === 'active' && new Date(t.start_date) <= today)
     ?.reduce((sum, t) => sum + parseFloat(t.rent_amount || 0), 0) || 0;
   
-  const monthlySARevenue = (property?.monthly_income || 0) - tenancyIncome;
+  const monthlySARevenue = totalIncome - tenancyIncome;
   
-  // Calculate PM fees from saBookings state
-  const monthlyPMFees = property?.property_category === 'sa'
-    ? (saBookings || []).reduce((sum, booking) => {
-        if (booking.status === 'cancelled') return sum;
-        const checkIn = new Date(booking.check_in);
-        if (checkIn >= currentMonthStart && checkIn <= currentMonthEnd) {
-          const currency = booking.currency || 'GBP';
-          const fxRate = currency === 'USD' ? 0.79 : currency === 'EUR' ? 0.83 : currency === 'CAD' ? 0.56 : currency === 'AUD' ? 0.49 : 1.0;
-          return sum + (parseFloat(booking.total_pm_deduction) || 0) * fxRate;
-        }
-        return sum;
-      }, 0)
-    : 0;
-  
-  // Net after expenses AND PM fees (always subtract both)
-  const totalExpenses = expenseSummary.totalThisMonth || 0;
-  const netIncome = totalIncome - totalExpenses - monthlyPMFees;
+  // Get PM fees from property data
+  const monthlyPMFees = property?.pm_fees || 0;
 
   return (
     <div className="property-detail-container">
@@ -689,8 +675,8 @@ function PropertyDetail() {
             )}
             <div className="stat-card expense">
               <h4>📉 Expenses</h4>
-              <div className="stat-value">−£{(totalExpenses + monthlyPMFees).toLocaleString()}</div>
-              <span className="card-hint">£{totalExpenses.toLocaleString()} expenses + £{monthlyPMFees.toLocaleString()} PM fees</span>
+              <div className="stat-value">−£{totalExpenses.toLocaleString()}</div>
+              <span className="card-hint">Includes PM fees and property expenses</span>
             </div>
             <div className={`stat-card ${netIncome >= 0 ? 'profit' : 'loss'}`}>
               <h4>{netIncome >= 0 ? '📈 Your Net' : '📉 Net Loss'}</h4>

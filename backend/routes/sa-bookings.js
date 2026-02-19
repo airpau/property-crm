@@ -387,4 +387,82 @@ router.post('/:id/mark-pm-paid', async (req, res) => {
   }
 });
 
+// POST /sa-bookings/recalculate-pm-fees - Fix PM fee calculations for a property
+router.post('/recalculate-pm-fees', async (req, res) => {
+  try {
+    const { propertyId } = req.body;
+    
+    if (!propertyId) {
+      return res.status(400).json({ error: 'propertyId required' });
+    }
+    
+    // Get property details
+    const { data: property, error: propError } = await req.supabase
+      .from('properties')
+      .select('*')
+      .eq('id', propertyId)
+      .eq('landlord_id', req.landlord_id)
+      .single();
+    
+    if (propError || !property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    
+    // Get all bookings for this property
+    const { data: bookings, error } = await req.supabase
+      .from('sa_bookings')
+      .select('*')
+      .eq('property_id', propertyId)
+      .eq('landlord_id', req.landlord_id);
+    
+    if (error) throw error;
+    
+    const results = [];
+    
+    for (const booking of bookings || []) {
+      const netRevenue = parseFloat(booking.net_revenue) || 0;
+      const cleaningFee = parseFloat(booking.cleaning_fee) || property.fixed_cleaning_fee || 285;
+      const pmPercent = parseFloat(property.management_fee_percent) || 18;
+      
+      // Calculate correct PM fee: % of (net - cleaning)
+      const revenueAfterCleaning = netRevenue - cleaningFee;
+      const pmFee = (revenueAfterCleaning * pmPercent) / 100;
+      const totalPMDeduction = cleaningFee + pmFee;
+      
+      // Update the booking
+      const { error: updateError } = await req.supabase
+        .from('sa_bookings')
+        .update({
+          cleaning_fee: cleaningFee,
+          pm_fee_amount: pmFee.toFixed(2),
+          total_pm_deduction: totalPMDeduction.toFixed(2),
+          updated_at: new Date()
+        })
+        .eq('id', booking.id);
+      
+      results.push({
+        id: booking.id,
+        guest_name: booking.guest_name,
+        check_in: booking.check_in,
+        net_revenue: netRevenue,
+        cleaning_fee: cleaningFee,
+        pm_fee_amount: pmFee.toFixed(2),
+        total_pm_deduction: totalPMDeduction.toFixed(2),
+        your_take_home: (netRevenue - pmFee).toFixed(2),
+        updated: !updateError,
+        error: updateError?.message
+      });
+    }
+    
+    res.json({
+      property: property.name,
+      bookings_updated: results.length,
+      bookings: results
+    });
+  } catch (err) {
+    console.error('Error recalculating PM fees:', err);
+    res.status(500).json({ error: 'Failed to recalculate PM fees' });
+  }
+});
+
 module.exports = router;

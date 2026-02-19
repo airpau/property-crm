@@ -230,12 +230,14 @@ router.post('/', async (req, res) => {
       const cleaningFee = parseFloat(bookingData.cleaning_fee) || 0;
       const pmPercent = parseFloat(property.management_fee_percent) || 0;
       
-      // PM fee is percentage of net revenue (already has platform and cleaning deducted)
-      const pmFee = (netRevenue * pmPercent) / 100;
+      // For OceanBliss: PM fee is 18% of (net revenue - cleaning fee)
+      // Cleaning fee is paid to Char separately, not deducted from your net
+      const revenueAfterCleaning = netRevenue - cleaningFee;
+      const pmFee = (revenueAfterCleaning * pmPercent) / 100;
       
       bookingData.cleaning_fee = cleaningFee;
       bookingData.pm_fee_amount = pmFee;
-      bookingData.total_pm_deduction = cleaningFee + pmFee;
+      bookingData.total_pm_deduction = cleaningFee + pmFee;  // Total Char gets
     }
     
     // Calculate total nights if not provided

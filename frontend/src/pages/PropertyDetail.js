@@ -270,7 +270,12 @@ function PropertyDetail() {
         pendingRevenueOriginal: 0,
         totalNights: 0,
         pmDeductions: 0,
-        pmDeductionsOriginal: 0  // Keep original currency amount
+        pmDeductionsOriginal: 0,  // Keep original currency amount
+        // PM breakdown
+        cleaningFeesTotal: 0,
+        cleaningFeesOriginal: 0,
+        pmFeesTotal: 0,
+        pmFeesOriginal: 0
       };
       
       const fxRate = 0.79;  // USD to GBP
@@ -279,20 +284,28 @@ function PropertyDetail() {
         if (booking.status !== 'cancelled') {
           const netRevenue = parseFloat(booking.net_revenue) || 0;
           const pmDeduction = parseFloat(booking.total_pm_deduction) || 0;
+          const cleaningFee = parseFloat(booking.cleaning_fee) || 0;
+          const pmFee = parseFloat(booking.pm_fee_amount) || 0;
           const bookingCurrency = booking.currency || 'GBP';
           const isBookingUSD = bookingCurrency === 'USD';
           
           // Store original amounts (USD for OceanBliss)
           summary.confirmedRevenueOriginal += netRevenue;
           summary.pmDeductionsOriginal += pmDeduction;
+          summary.cleaningFeesOriginal += cleaningFee;
+          summary.pmFeesOriginal += pmFee;
           
           // Convert to GBP for calculations
           const netRevenueGBP = isBookingUSD ? netRevenue * fxRate : netRevenue;
           const pmDeductionGBP = isBookingUSD ? pmDeduction * fxRate : pmDeduction;
+          const cleaningFeeGBP = isBookingUSD ? cleaningFee * fxRate : cleaningFee;
+          const pmFeeGBP = isBookingUSD ? pmFee * fxRate : pmFee;
           
           summary.confirmedRevenue += netRevenueGBP;
           summary.totalNights += parseInt(booking.total_nights) || 0;
           summary.pmDeductions += pmDeductionGBP;
+          summary.cleaningFeesTotal += cleaningFeeGBP;
+          summary.pmFeesTotal += pmFeeGBP;
           
           if (booking.payment_status === 'received') {
             summary.receivedRevenue += netRevenueGBP;
@@ -1005,7 +1018,17 @@ function PropertyDetail() {
                       `£${saSummary.pmDeductions.toFixed(2)}`
                     )}
                   </span>
-                  <span className="summary-hint">{property?.property_manager_name || 'Property Manager'}</span>
+                  <span className="summary-hint">
+                    {saBookings.some(b => b.currency === 'USD') ? (
+                      <>
+                        Cleaning: ${saSummary.cleaningFeesOriginal.toFixed(2)} + PM {property?.management_fee_percent || 18}%: ${saSummary.pmFeesOriginal.toFixed(2)}
+                      </>
+                    ) : (
+                      <>
+                        Cleaning: £{saSummary.cleaningFeesTotal.toFixed(2)} + PM {property?.management_fee_percent || 0}%: £{saSummary.pmFeesTotal.toFixed(2)}
+                      </>
+                    )}
+                  </span>
                 </div>
               )}
             </div>

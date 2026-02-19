@@ -97,8 +97,9 @@ router.get('/', async (req, res) => {
         monthlyIncome += saBookingRevenue;
         
         // Calculate PM fees for this month (converted to GBP)
+        // Use pm_fee_amount only (18% of net), NOT total_pm_deduction (which includes cleaning)
         monthlyPMFees = monthlyBookings.reduce((sum, b) => {
-          const gbpAmount = toGBP(b.total_pm_deduction, b.currency);
+          const gbpAmount = toGBP(b.pm_fee_amount, b.currency);
           return sum + gbpAmount;
         }, 0);
         
@@ -249,7 +250,7 @@ router.get('/:id', async (req, res) => {
       // Get ALL non-cancelled bookings for this property with currency
       const { data: saBookings } = await req.supabase
         .from('sa_bookings')
-        .select('net_revenue, received_date, check_in, payment_status, currency, total_pm_deduction')
+        .select('net_revenue, received_date, check_in, payment_status, currency, pm_fee_amount, total_pm_deduction')
         .eq('property_id', id)
         .eq('landlord_id', req.landlord_id)
         .not('status', 'eq', 'cancelled');
@@ -275,12 +276,10 @@ router.get('/:id', async (req, res) => {
       monthlyIncome += saRevenue;
       
       // Calculate PM fees for this month (in GBP)
+      // Use pm_fee_amount only (18% of net), NOT total_pm_deduction (which includes cleaning)
       const monthlyPMFees = monthlyBookings.reduce((sum, b) => {
-        // PM fee is total_gross - net_revenue
-        const grossAmount = toGBP(b.net_revenue, b.currency); // net in GBP
-        // Get total_pm_deduction if available, otherwise calculate
-        const pmDeduction = b.total_pm_deduction ? toGBP(b.total_pm_deduction, b.currency) : 0;
-        return sum + pmDeduction;
+        const pmFee = b.pm_fee_amount ? toGBP(b.pm_fee_amount, b.currency) : 0;
+        return sum + pmFee;
       }, 0);
       
       // Get regular expenses for this property

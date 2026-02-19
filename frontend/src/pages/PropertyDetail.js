@@ -679,15 +679,15 @@ function PropertyDetail() {
           <>
             <div className="stat-card income">
               <h4>💰 Total Monthly Income</h4>
-              <div className="stat-value">£{totalIncome.toLocaleString()}</div>
+              <div className="stat-value">£{totalIncome.toFixed(2)}</div>
               <span className="card-hint">
-                {tenancyIncome > 0 ? `£${tenancyIncome.toLocaleString()} rent + £${monthlySARevenue.toLocaleString()} SA` : 'All from SA bookings'}
+                {tenancyIncome > 0 ? `£${tenancyIncome.toFixed(2)} rent + £${monthlySARevenue.toFixed(2)} SA` : 'All from SA bookings'}
               </span>
             </div>
             {monthlySARevenue > 0 && (
               <div className="stat-card" style={{background: '#f0f9ff', borderColor: '#3b82f6'}}>
                 <h4 style={{color: '#1e40af'}}>✈️ SA Bookings</h4>
-                <div className="stat-value" style={{color: '#2563eb'}}>£{monthlySARevenue.toLocaleString()}</div>
+                <div className="stat-value" style={{color: '#2563eb'}}>£{monthlySARevenue.toFixed(2)}</div>
                 <span className="card-hint">
                   {saBookings.filter(b => {
                     if (b.status === 'cancelled') return false;
@@ -695,7 +695,7 @@ function PropertyDetail() {
                     return checkIn >= currentMonthStart && checkIn <= currentMonthEnd;
                   }).length} bookings this month
                   {saBookings.some(b => b.currency === 'USD') && (
-                    <div>{`$${(monthlySARevenue / 0.79).toFixed(0)} USD ≈ £${monthlySARevenue.toLocaleString()} GBP`}</div>
+                    <div>{`$${(monthlySARevenue / 0.79).toFixed(0)} USD ≈ £${monthlySARevenue.toFixed(2)} GBP`}</div>
                   )}
                 </span>
               </div>
@@ -703,7 +703,7 @@ function PropertyDetail() {
             {property.is_managed && monthlyPMFees > 0 && (
               <div className="stat-card warning">
                 <h4>🏢 PM Fees</h4>
-                <div className="stat-value">−£{monthlyPMFees.toLocaleString()}</div>
+                <div className="stat-value">−£{monthlyPMFees.toFixed(2)}</div>
                 <span className="card-hint">
                   {property.property_manager_name || 'Property Manager'}
                   {saBookings.some(b => b.currency === 'USD') && ` • USD ${(monthlyPMFees / 0.79).toFixed(0)}`}
@@ -712,13 +712,13 @@ function PropertyDetail() {
             )}
             <div className="stat-card expense">
               <h4>📉 Expenses</h4>
-              <div className="stat-value">−£{totalExpenses.toLocaleString()}</div>
+              <div className="stat-value">−£{totalExpenses.toFixed(2)}</div>
               <span className="card-hint">Includes PM fees and property expenses</span>
             </div>
             <div className={`stat-card ${netIncome >= 0 ? 'profit' : 'loss'}`}>
               <h4>{netIncome >= 0 ? '📈 Your Net' : '📉 Net Loss'}</h4>
               <div className="stat-value">
-                {netIncome >= 0 ? '+' : '−'}£{Math.abs(netIncome).toLocaleString()}
+                {netIncome >= 0 ? '+' : '−'}£{Math.abs(netIncome).toFixed(2)}
               </div>
               <span className="card-hint">Income − Expenses {monthlyPMFees > 0 ? '− PM Fees' : ''}</span>
             </div>
@@ -727,9 +727,9 @@ function PropertyDetail() {
           <>
             <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
               <h4>Monthly Rental Income</h4>
-              <div className="stat-value">£{totalIncome.toLocaleString()}</div>
+              <div className="stat-value">£{totalIncome.toFixed(2)}</div>
               {saBookings.some(b => b.currency === 'USD') && (
-                <span className="card-hint">${(totalIncome / 0.79).toFixed(0)} USD ≈ £{totalIncome.toLocaleString()} GBP</span>
+                <span className="card-hint">${(totalIncome / 0.79).toFixed(0)} USD ≈ £{totalIncome.toFixed(2)} GBP</span>
               )}
               {!saBookings.some(b => b.currency === 'USD') && (
                 <span className="card-action">View in Rent Tracker →</span>
@@ -973,21 +973,21 @@ function PropertyDetail() {
                 <span className="summary-value">
                   {saBookings.some(b => b.currency === 'USD') ? (
                     <>
-                      ${saSummary.confirmedRevenueOriginal.toLocaleString()} USD<br/>
-                      <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.confirmedRevenue.toLocaleString()} GBP</small>
+                      ${saSummary.confirmedRevenueOriginal.toFixed(2)} USD<br/>
+                      <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.confirmedRevenue.toFixed(2)} GBP</small>
                     </>
                   ) : (
-                    `£${saSummary.confirmedRevenue.toLocaleString()}`
+                    `£${saSummary.confirmedRevenue.toFixed(2)}`
                   )}
                 </span>
                 <span className="summary-hint">
                   {saBookings.some(b => b.currency === 'USD') ? (
                     saSummary.receivedRevenueOriginal > 0 ? 
-                      `$${saSummary.receivedRevenueOriginal.toLocaleString()} received` : 
+                      `$${saSummary.receivedRevenueOriginal.toFixed(2)} received` : 
                       'Awaiting payouts'
                   ) : (
                     saSummary.receivedRevenue > 0 ? 
-                      `£${saSummary.receivedRevenue.toLocaleString()} received` : 
+                      `£${saSummary.receivedRevenue.toFixed(2)} received` : 
                       'Awaiting payouts'
                   )}
                 </span>
@@ -998,11 +998,11 @@ function PropertyDetail() {
                   <span className="summary-value">
                     {saBookings.some(b => b.currency === 'USD') ? (
                       <>
-                        ${saSummary.pmDeductionsOriginal.toLocaleString()} USD<br/>
-                        <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.pmDeductions.toLocaleString()} GBP</small>
+                        ${saSummary.pmDeductionsOriginal.toFixed(2)} USD<br/>
+                        <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.pmDeductions.toFixed(2)} GBP</small>
                       </>
                     ) : (
-                      `£${saSummary.pmDeductions.toLocaleString()}`
+                      `£${saSummary.pmDeductions.toFixed(2)}`
                     )}
                   </span>
                   <span className="summary-hint">{property?.property_manager_name || 'Property Manager'}</span>
@@ -1018,7 +1018,7 @@ function PropertyDetail() {
                   {saForecast.filter(m => m.confirmed > 0).map(month => (
                     <div key={month.month} className="forecast-month">
                       <div className="month-name">{month.monthName}</div>
-                      <div className="month-revenue">£{month.confirmed.toFixed(0)}</div>
+                      <div className="month-revenue">£{month.confirmed.toFixed(2)}</div>
                       <div className="month-bookings">{month.bookings} bookings</div>
                       <div className="month-status" style={{
                         color: month.received > 0 ? '#059669' : '#f59e0b'
@@ -1141,15 +1141,21 @@ function PropertyDetail() {
             {/* Rent Summary - Shows BOTH Total Income & Outstanding */}
             <div className="rent-summary-cards">
               <div className="summary-card income">
-                <span className="summary-label">Monthly Income</span>
-                <span className="summary-value">£{totalIncome.toLocaleString()}</span>
-                <span className="summary-hint">Total from {property?.tenancies?.filter(t => t.status === 'active').length || 0} tenancies</span>
+                <span className="summary-label">{property?.property_category === 'sa' ? 'Monthly SA Revenue' : 'Monthly Income'}</span>
+                <span className="summary-value">£{totalIncome.toFixed(2)}</span>
+                <span className="summary-hint">
+                  {property?.property_category === 'sa' 
+                    ? `From ${saBookings.filter(b => b.status !== 'cancelled').length} SA bookings`
+                    : `Total from ${property?.tenancies?.filter(t => t.status === 'active').length || 0} tenancies`}
+                </span>
               </div>
+              {property?.property_category !== 'sa' && (
               <div className="summary-card outstanding">
                 <span className="summary-label">Outstanding</span>
-                <span className="summary-value">£{totalMonthlyRent.toLocaleString()}</span>
+                <span className="summary-value">£{totalMonthlyRent.toFixed(2)}</span>
                 <span className="summary-hint">{upcomingPayments.length} payments due</span>
               </div>
+            )}
             </div>
 
             {upcomingPayments.length === 0 ? (
@@ -1433,10 +1439,10 @@ function PropertyDetail() {
           <div className={`profit-loss-card ${netIncome >= 0 ? 'profit' : 'loss'}`}>
             <h3>📊 This Month</h3>
             <div className="amount">
-              {netIncome >= 0 ? '+' : ''}£{netIncome.toLocaleString()}
+              {netIncome >= 0 ? '+' : ''}£{netIncome.toFixed(2)}
             </div>
             <div className="breakdown">
-              💵 Income: £{totalIncome.toLocaleString()} | 📉 Expenses: £{totalExpenses.toLocaleString()}
+              💵 Income: £{totalIncome.toFixed(2)} | 📉 Expenses: £{totalExpenses.toFixed(2)}
             </div>
           </div>
 
@@ -1446,21 +1452,21 @@ function PropertyDetail() {
             <div className="summary-grid">
               <div className="summary-item">
                 <div className="label">Recurring</div>
-                <div className="value">£{expenseSummary.monthlyRecurring.toLocaleString()}</div>
+                <div className="value">£{expenseSummary.monthlyRecurring.toFixed(2)}</div>
               </div>
               <div className="summary-item">
                 <div className="label">One-off</div>
-                <div className="value">£{expenseSummary.oneOff.toLocaleString()}</div>
+                <div className="value">£{expenseSummary.oneOff.toFixed(2)}</div>
               </div>
               {expenseSummary.byCategory['Property Management'] > 0 && (
                 <div className="summary-item">
                   <div className="label">PM Fees</div>
-                  <div className="value">£{expenseSummary.byCategory['Property Management'].toLocaleString()}</div>
+                  <div className="value">£{expenseSummary.byCategory['Property Management'].toFixed(2)}</div>
                 </div>
               )}
               <div className="summary-item">
                 <div className="label">Total</div>
-                <div className="value negative">£{expenseSummary.totalThisMonth.toLocaleString()}</div>
+                <div className="value negative">£{expenseSummary.totalThisMonth.toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -1484,7 +1490,7 @@ function PropertyDetail() {
                     </div>
                   </div>
                   <div className="expense-amount">
-                    <div className="amount">£{parseFloat(expense.amount).toLocaleString()}</div>
+                    <div className="amount">£{parseFloat(expense.amount).toFixed(2)}</div>
                     <div className="frequency">{expense.frequency === 'one-off' ? 'One-off' : expense.frequency}</div>
                     <button
                       className="btn-secondary edit-expense-btn"
@@ -1522,13 +1528,13 @@ function PropertyDetail() {
                           {month.month} {i === 0 && <span style={{color: '#10b981', fontSize: '12px'}}>(This month)</span>}
                         </td>
                         <td style={{padding: '10px', textAlign: 'right', color: '#6b7280'}}>
-                          £{month.recurring.toLocaleString()}
+                          £{month.recurring.toFixed(2)}
                         </td>
                         <td style={{padding: '10px', textAlign: 'right', color: month.oneOff > 0 ? '#dc2626' : '#9ca3af'}}>
-                          {month.oneOff > 0 ? `£${month.oneOff.toLocaleString()}` : '—'}
+                          {month.oneOff > 0 ? `£${month.oneOff.toFixed(2)}` : '—'}
                         </td>
                         <td style={{padding: '10px', textAlign: 'right', fontWeight: 600, color: month.total > 0 ? '#374151' : '#9ca3af'}}>
-                          £{month.total.toLocaleString()}
+                          £{month.total.toFixed(2)}
                         </td>
                       </tr>
                     ))}

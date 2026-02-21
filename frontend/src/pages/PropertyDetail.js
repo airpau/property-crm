@@ -1005,31 +1005,54 @@ function PropertyDetail() {
                   )}
                 </span>
               </div>
-              {property?.is_managed && saSummary.pmDeductions > 0 && (
-                <div className="summary-card pm-deductions">
-                  <span className="summary-label">PM Deductions</span>
-                  <span className="summary-value">
-                    {saBookings.some(b => b.currency === 'USD') ? (
-                      <>
-                        ${saSummary.pmDeductionsOriginal.toFixed(2)} USD<br/>
-                        <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.pmDeductions.toFixed(2)} GBP</small>
-                      </>
-                    ) : (
-                      `£${saSummary.pmDeductions.toFixed(2)}`
-                    )}
-                  </span>
-                  <span className="summary-hint">
-                    {saBookings.some(b => b.currency === 'USD') ? (
-                      <>
-                        Cleaning: ${saSummary.cleaningFeesOriginal.toFixed(2)} + PM {property?.management_fee_percent || 18}%: ${saSummary.pmFeesOriginal.toFixed(2)}
-                      </>
-                    ) : (
-                      <>
-                        Cleaning: £{saSummary.cleaningFeesTotal.toFixed(2)} + PM {property?.management_fee_percent || 0}%: £{saSummary.pmFeesTotal.toFixed(2)}
-                      </>
-                    )}
-                  </span>
-                </div>
+              {property?.is_managed && (saSummary.pmFeesTotal > 0 || saSummary.cleaningFeesTotal > 0) && (
+                <>
+                  {/* PM Fee (18% only) */}
+                  <div className="summary-card pm-fee" style={{ borderLeft: '3px solid #6366f1', background: 'linear-gradient(135deg, #f8fafc, #e0e7ff)'}}>
+                    <span className="summary-label">PM Fee ({property?.management_fee_percent || 18}%)</span>
+                    <span className="summary-value" style={{ color: '#4338ca'}}>
+                      {saBookings.some(b => b.currency === 'USD') ? (
+                        <>
+                          ${saSummary.pmFeesOriginal.toFixed(2)} USD<br/>
+                          <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.pmFeesTotal.toFixed(2)} GBP</small>
+                        </>
+                      ) : (
+                        `£${saSummary.pmFeesTotal.toFixed(2)}`
+                      )}
+                    </span>
+                    <span className="summary-hint">18% of net after cleaning</span>
+                  </div>
+                  {/* Cleaning Fee (shown separately) */}
+                  <div className="summary-card cleaning-fee" style={{ borderLeft: '3px solid '#06b6d4', background: 'linear-gradient(135deg, #f8fafc, #cffafe)'}}>
+                    <span className="summary-label">Cleaning Fee</span>
+                    <span className="summary-value" style={{ color: '#0e7490'}}>
+                      {saBookings.some(b => b.currency === 'USD') ? (
+                        <>
+                          ${saSummary.cleaningFeesOriginal.toFixed(2)} USD<br/>
+                          <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{saSummary.cleaningFeesTotal.toFixed(2)} GBP</small>
+                        </>
+                      ) : (
+                        `£${saSummary.cleaningFeesTotal.toFixed(2)}`
+                      )}
+                    </span>
+                    <span className="summary-hint">Per-checkout cleaning cost</span>
+                  </div>
+                  {/* Take Home Summary */}
+                  <div className="summary-card take-home" style={{ borderLeft: '3px solid '#059669', background: 'linear-gradient(135deg, #f8fafc, #d1fae5)'}}>
+                    <span className="summary-label">🎯 Your Take-Home</span>
+                    <span className="summary-value" style={{ color: '#047857', fontWeight: '700', fontSize: '1.25em'}}>
+                      {saBookings.some(b => b.currency === 'USD') ? (
+                        <>
+                          ${(saSummary.confirmedRevenueOriginal - saSummary.pmFeesOriginal - saSummary.cleaningFeesOriginal).toFixed(2)} USD<br/>
+                          <small style={{color: '#6b7280', fontSize: '0.8em'}}>≈ £{(saSummary.confirmedRevenue - saSummary.pmFeesTotal - saSummary.cleaningFeesTotal).toFixed(2)} GBP</small>
+                        </>
+                      ) : (
+                        `£${(saSummary.confirmedRevenue - saSummary.pmFeesTotal - saSummary.cleaningFeesTotal).toFixed(2)}`
+                      )}
+                    </span>
+                    <span className="summary-hint" style={{ color: '#059669'}}>Revenue − PM Fee − Cleaning</span>
+                  </div>
+                </>
               )}
             </div>
             

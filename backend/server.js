@@ -15,6 +15,7 @@ const googleAuthRouter = require('./routes/google-auth');
 const quickbooksAuthRouter = require('./routes/quickbooks-auth');
 const expensesRouter = require('./routes/expenses');
 const saBookingsRouter = require('./routes/sa-bookings');
+const mtdRouter = require('./routes/mtd');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -51,6 +52,9 @@ app.get('/api/health', (req, res) => {
 
 // Public auth routes
 app.use('/api/auth', authRouter);
+
+// MTD waitlist is public (no auth), other MTD routes need auth
+app.post('/api/mtd/waitlist', mtdRouter);
 
 // OAuth callback must be PUBLIC (Google redirects here without auth token)
 // This must be BEFORE mounting the protected /api/google router
@@ -195,6 +199,9 @@ app.use('/api/expenses', authMiddleware, expensesRouter);
 
 // Serviced accommodation bookings
 app.use('/api/sa-bookings', authMiddleware, saBookingsRouter);
+
+// MTD routes (authenticated)
+app.use('/api/mtd', authMiddleware, mtdRouter);
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {

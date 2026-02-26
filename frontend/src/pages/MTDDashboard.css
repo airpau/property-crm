@@ -1,0 +1,224 @@
+/* MTD Dashboard */
+.mtd-dashboard {
+  padding: 0;
+}
+
+.mtd-dash-loading {
+  text-align: center;
+  padding: 4rem;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.mtd-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.mtd-dash-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.mtd-dash-header p {
+  color: #6b7280;
+}
+
+.mtd-dash-controls select {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+}
+
+.mtd-dash-error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* Quarter Cards */
+.mtd-quarters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.mtd-quarter-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mtd-quarter-card:hover {
+  border-color: #14b8a6;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+}
+
+.mtd-quarter-card.active {
+  border-color: #14b8a6;
+  background: #f0fdfa;
+}
+
+.mtd-quarter-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.mtd-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.mtd-quarter-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mtd-q-income, .mtd-q-expense, .mtd-q-profit {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.mtd-q-income label, .mtd-q-expense label, .mtd-q-profit label {
+  color: #6b7280;
+}
+
+.mtd-q-income span { color: #059669; font-weight: 600; }
+.mtd-q-expense span { color: #dc2626; font-weight: 600; }
+.mtd-q-profit span { color: #1a1a2e; font-weight: 700; }
+
+.mtd-quarter-empty {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.mtd-quarter-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-sm:hover {
+  background: #f9fafb;
+  border-color: #14b8a6;
+}
+
+/* Detail Section */
+.mtd-detail-section {
+  margin-top: 1rem;
+}
+
+.mtd-detail-section h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+.mtd-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.25rem;
+}
+
+.mtd-property-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.mtd-property-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.mtd-prop-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mtd-prop-income label, .mtd-prop-expense label, .mtd-prop-profit label {
+  display: block;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 0.15rem;
+}
+
+.mtd-prop-income span { color: #059669; font-weight: 700; font-size: 1.1rem; }
+.mtd-prop-expense span { color: #dc2626; font-weight: 700; font-size: 1.1rem; }
+.mtd-prop-profit span { color: #1a1a2e; font-weight: 700; font-size: 1.1rem; }
+
+.mtd-categories h4 {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mtd-cat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.mtd-cat-row:last-child {
+  border-bottom: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mtd-quarters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mtd-dash-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mtd-quarters-grid {
+    grid-template-columns: 1fr;
+  }
+}

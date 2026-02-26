@@ -10,6 +10,8 @@ import PropertyList from './pages/PropertyList';
 import PropertyDetail from './pages/PropertyDetail';
 import TenantList from './pages/TenantList';
 import RentTracker from './pages/RentTracker';
+import MTDLanding from './pages/MTDLanding';
+import MTDDashboard from './pages/MTDDashboard';
 import './App.css';
 
 function App() {
@@ -18,6 +20,9 @@ function App() {
       <Router>
         <div className="app">
           <Routes>
+            {/* Public routes */}
+            <Route path="/mtd" element={<MTDLanding />} />
+            
             {/* Public auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -49,6 +54,7 @@ function AppLayout() {
           <Route path="/properties/:id" element={<PropertyDetail />} />
           <Route path="/tenants" element={<TenantList />} />
           <Route path="/rent-tracker" element={<RentTracker />} />
+          <Route path="/mtd-dashboard" element={<MTDDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

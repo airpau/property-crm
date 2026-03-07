@@ -76,14 +76,16 @@ router.get('/', async (req, res) => {
           .eq('landlord_id', req.landlord_id)
           .not('status', 'eq', 'cancelled');
         
-        // Filter bookings: count if received_date is this month, OR check_in is this month (if not yet received)
+        // Filter bookings: count if received_date is this month, OR check_in is this month
+        // This shows ALL revenue for the month (received + expected from bookings)
         const monthlyBookings = (saBookings || []).filter(b => {
           // If payment was received this month, count it
           if (b.received_date && b.received_date >= monthStart && b.received_date <= monthEnd) {
             return true;
           }
-          // If check_in is this month and payment is pending (not yet received), count as expected income
-          if (b.check_in >= monthStart && b.check_in <= monthEnd && b.payment_status === 'pending') {
+          // If check_in is in this month, count it (regardless of when paid)
+          // This shows expected revenue from bookings made for this month
+          if (b.check_in >= monthStart && b.check_in <= monthEnd) {
             return true;
           }
           return false;
@@ -255,14 +257,16 @@ router.get('/:id', async (req, res) => {
         .eq('landlord_id', req.landlord_id)
         .not('status', 'eq', 'cancelled');
       
-      // Filter bookings: count if received_date is this month, OR check_in is this month (if not yet received)
+      // Filter bookings: count if received_date is this month, OR check_in is this month
+      // This shows ALL revenue for the month (received + expected from bookings)
       const monthlyBookings = (saBookings || []).filter(b => {
         // If payment was received this month, count it
         if (b.received_date && b.received_date >= monthStart && b.received_date <= monthEnd) {
           return true;
         }
-        // If check_in is this month and payment is pending (not yet received), count as expected income
-        if (b.check_in >= monthStart && b.check_in <= monthEnd && b.payment_status === 'pending') {
+        // If check_in is in this month, count it (regardless of when paid)
+        // This shows expected revenue from bookings made for this month
+        if (b.check_in >= monthStart && b.check_in <= monthEnd) {
           return true;
         }
         return false;

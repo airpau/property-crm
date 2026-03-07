@@ -226,16 +226,15 @@ router.post('/generate', async (req, res) => {
       const dueDay = t.rent_due_day || 1;
       const dueDate = new Date(year, monthNum - 1, dueDay);
       
-      // If due date has passed this month, mark as late
-      const isLate = dueDate < new Date();
-      
+      // Always start as 'pending' - let the frontend determine overdue status dynamically
+      // This allows recording payments for past dates when generating mid-month
       return {
         landlord_id: t.landlord_id,
         tenancy_id: t.id,
         property_id: t.property_id,
         due_date: dueDate.toISOString().split('T')[0],
         amount_due: t.rent_amount,
-        status: isLate ? 'late' : 'pending',
+        status: 'pending',  // Always start as pending
         created_at: new Date().toISOString()
       };
     });

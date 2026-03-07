@@ -322,7 +322,7 @@ function RentTracker() {
                         )}
                       </div>
                       
-                      {payment.status === 'pending' && (
+                      {(payment.status === 'pending' || payment.status === 'late') && (
                         <button 
                           className="record-payment-btn"
                           onClick={() => recordPayment(payment.id, payment.amount_due)}

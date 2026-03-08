@@ -2,7 +2,8 @@ services:
   # Backend API Service
   - type: web
     name: property-crm-api
-    env: node
+    runtime: node
+    branch: main
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     envVars:
@@ -18,11 +19,13 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+    autoDeploy: true
 
   # Frontend Service  
   - type: web
     name: property-crm-frontend
-    env: static
+    type: static
+    branch: main
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
     envVars:
@@ -32,3 +35,4 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    autoDeploy: true

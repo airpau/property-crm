@@ -17,6 +17,13 @@ function PropertyDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [upcomingPayments, setUpcomingPayments] = useState([]);
+  const [monthlyRentSummary, setMonthlyRentSummary] = useState({
+    collected: 0,
+    outstanding: 0,
+    totalDue: 0,
+    paidCount: 0,
+    totalCount: 0
+  });
   const [editingTenant, setEditingTenant] = useState(null);
   const [editForm, setEditForm] = useState({ email: '', phone: '' });
   const [saving, setSaving] = useState(false);
@@ -397,10 +404,11 @@ function PropertyDetail() {
       setProperty(response.data);
       setLoading(false);
       
-      // Get actual rent payments for this month (pending or late only)
+      // Get actual rent payments for this month
       const today = new Date();
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const currentMonthYear = today.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
       
       try {
         const paymentsRes = await axios.get(`${API_URL}/api/rent-payments`, {
@@ -412,9 +420,28 @@ function PropertyDetail() {
           }
         });
         
-        // Filter to PENDING and LATE payments (not yet paid)
-        const pendingPayments = (paymentsRes.data || [])
-          .filter(p => p.status === 'pending' || p.status === 'late')
+        const allPayments = paymentsRes.data || [];
+        
+        // Calculate monthly summary
+        const paid = allPayments.filter(p => p.status === 'paid');
+        const pending = allPayments.filter(p => p.status === 'pending');
+        const late = allPayments.filter(p => p.status === 'late');
+        
+        const collected = paid.reduce((sum, p) => sum + parseFloat(p.amount_paid || p.amount_due || 0), 0);
+        const outstanding = pending.reduce((sum, p) => sum + parseFloat(p.amount_due || 0), 0) + 
+                          late.reduce((sum, p) => sum + parseFloat(p.amount_due || 0), 0);
+        
+        setMonthlyRentSummary({
+          collected,
+          outstanding,
+          totalDue: collected + outstanding,
+          paidCount: paid.length,
+          totalCount: allPayments.length,
+          currentMonthYear
+        });
+        
+        // Filter to PENDING and LATE payments (not yet paid) for the list
+        const pendingPayments = pending.concat(late)
           .map(payment => ({
             tenantName: payment.tenants?.map(t => `${t.first_name} ${t.last_name}`).join(', ') || 'Unknown',
             amount: payment.amount_due,
@@ -777,24 +804,32 @@ function PropertyDetail() {
           </>
         ) : (
           <>
-            <div className="stat-card clickable" onClick={() => window.location.href = '/rent-tracker'}>
-              <h4>Monthly Rental Income</h4>
-              <div className="stat-value">£{totalIncome.toFixed(2)}</div>
-              {saBookings.some(b => b.currency === 'USD') && (
-                <span className="card-hint">${(totalIncome / 0.79).toFixed(0)} USD ≈ £{totalIncome.toFixed(2)} GBP</span>
-              )}
-              {!saBookings.some(b => b.currency === 'USD') && (
-                <span className="card-action">View in Rent Tracker →</span>
-              )}
+            <div className="stat-card income clickable" onClick={() => window.location.href = '/rent-tracker'}>
+              <h4>💰 Rent Collected - {monthlyRentSummary.currentMonthYear || 'This Month'}</h4>
+              <div className="stat-value">£{monthlyRentSummary.collected.toFixed(2)}</div>
+              <span className="card-hint">
+                {monthlyRentSummary.paidCount}/{monthlyRentSummary.totalCount} payments received
+              </span>
+              <span className="card-action">View in Rent Tracker →</span>
+            </div>
+            <div className="stat-card warning">
+              <h4>⏳ Outstanding</h4>
+              <div className="stat-value">£{monthlyRentSummary.outstanding.toFixed(2)}</div>
+              <span className="card-hint">
+                {monthlyRentSummary.totalCount - monthlyRentSummary.paidCount} payments pending
+              </span>
             </div>
             <div className="stat-card">
-              <h4>Active Tenancies</h4>
-              <div className="stat-value">{property.tenancies?.length || 0}</div>
+              <h4>📊 Total Due</h4>
+              <div className="stat-value">£{monthlyRentSummary.totalDue.toFixed(2)}</div>
+              <span className="card-hint">
+                Collected + Outstanding
+              </span>
             </div>
             <div className="stat-card clickable" onClick={() => window.location.href = '/tenants'}>
-              <h4>Total Tenants</h4>
+              <h4>Active Tenancies</h4>
               <div className="stat-value">
-                {property.tenancies?.reduce((sum, t) => sum + (t.tenants?.length || 0), 0) || 0}
+                {property.tenancies?.filter(t => t.status === 'active').length || 0}
               </div>
               <span className="card-action">View All Tenants →</span>
             </div>

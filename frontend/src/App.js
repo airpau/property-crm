@@ -12,6 +12,7 @@ import TenantList from './pages/TenantList';
 import RentTracker from './pages/RentTracker';
 import MTDLanding from './pages/MTDLanding';
 import MTDDashboard from './pages/MTDDashboard';
+import Reports from './pages/Reports';
 import './App.css';
 
 function App() {
@@ -54,6 +55,7 @@ function AppLayout() {
           <Route path="/properties/:id" element={<PropertyDetail />} />
           <Route path="/tenants" element={<TenantList />} />
           <Route path="/rent-tracker" element={<RentTracker />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/mtd-dashboard" element={<MTDDashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

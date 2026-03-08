@@ -16,6 +16,7 @@ const quickbooksAuthRouter = require('./routes/quickbooks-auth');
 const expensesRouter = require('./routes/expenses');
 const saBookingsRouter = require('./routes/sa-bookings');
 const mtdRouter = require('./routes/mtd');
+const reportsRouter = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -202,6 +203,9 @@ app.use('/api/sa-bookings', authMiddleware, saBookingsRouter);
 
 // MTD routes (authenticated)
 app.use('/api/mtd', authMiddleware, mtdRouter);
+
+// Reporting routes
+app.use('/api/reports', authMiddleware, reportsRouter);
 
 // Serve static files from frontend build in production
 if (process.env.NODE_ENV === 'production') {

@@ -55,6 +55,15 @@ const Navbar = () => {
           <span className="nav-icon">💰</span>
           <span className="nav-label">Rent</span>
         </NavLink>
+        <NavLink 
+          to="/reports" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+          onTouchStart={(e) => e.currentTarget.classList.add('touch-active')}
+          onTouchEnd={(e) => e.currentTarget.classList.remove('touch-active')}
+        >
+          <span className="nav-icon">📊</span>
+          <span className="nav-label">Reports</span>
+        </NavLink>
       </nav>
 
       <div className="navbar-right">

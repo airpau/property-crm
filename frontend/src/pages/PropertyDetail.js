@@ -20,6 +20,8 @@ function PropertyDetail() {
   const [editingTenant, setEditingTenant] = useState(null);
   const [editForm, setEditForm] = useState({ email: '', phone: '' });
   const [saving, setSaving] = useState(false);
+  const [endingTenancy, setEndingTenancy] = useState(null);
+  const [endTenancyDate, setEndTenancyDate] = useState('');
   
   // Drive integration state
   const [driveConnected, setDriveConnected] = useState(false);
@@ -485,6 +487,42 @@ function PropertyDetail() {
     setEditingTenant(null);
   };
 
+  // End tenancy (tenant moving out)
+  const handleEndTenancy = async () => {
+    if (!endingTenancy) return;
+    
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      
+      await axios.post(
+        `${API_URL}/api/tenancies/${endingTenancy.id}/end`,
+        { end_date: endTenancyDate || new Date().toISOString().split('T')[0] },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Refresh property data
+      await fetchProperty();
+      setEndingTenancy(null);
+      setEndTenancyDate('');
+      setSaving(false);
+    } catch (err) {
+      console.error('Error ending tenancy:', err);
+      alert('Failed to end tenancy. Check console for details.');
+      setSaving(false);
+    }
+  };
+
+  const openEndTenancyModal = (tenancy) => {
+    setEndingTenancy(tenancy);
+    setEndTenancyDate(new Date().toISOString().split('T')[0]);
+  };
+
+  const closeEndTenancyModal = () => {
+    setEndingTenancy(null);
+    setEndTenancyDate('');
+  };
+
   // Google Drive connection
   const connectGoogleDrive = async () => {
     try {
@@ -883,6 +921,28 @@ function PropertyDetail() {
                     </div>
                   ) : (
                     <p>No tenants assigned</p>
+                  )}
+
+                  {/* End Tenancy Button */}
+                  {tenancy.status === 'active' && (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                      <button
+                        onClick={() => openEndTenancyModal(tenancy)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          width: '100%'
+                        }}
+                      >
+                        🚪 End Tenancy
+                      </button>
+                    </div>
                   )}
 
                   {/* Document Upload for this tenancy */}
@@ -1642,6 +1702,56 @@ function PropertyDetail() {
                 disabled={saving}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Tenancy Modal */}
+      {endingTenancy && (
+        <div className="modal-overlay" onClick={closeEndTenancyModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>🚪 End Tenancy</h3>
+            <p style={{ marginBottom: '16px', color: '#666' }}>
+              End tenancy for <strong>{endingTenancy.tenants?.map(t => `${t.first_name} ${t.last_name}`).join(', ')}</strong>
+              {endingTenancy.room_number ? ` (Room ${endingTenancy.room_number})` : ''}
+            </p>
+            <div className="form-group">
+              <label>End Date</label>
+              <input
+                type="date"
+                value={endTenancyDate}
+                onChange={(e) => setEndTenancyDate(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                onClick={closeEndTenancyModal}
+                style={{
+                  padding: '10px 20px',
+                  background: '#f3f4f6',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEndTenancy}
+                disabled={saving}
+                style={{
+                  padding: '10px 20px',
+                  background: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                {saving ? '⏳ Ending...' : 'End Tenancy'}
               </button>
             </div>
           </div>

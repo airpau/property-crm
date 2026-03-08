@@ -232,4 +232,56 @@ router.post('/:id/generate-payments', async (req, res) => {
   }
 });
 
+// POST end a tenancy (tenant moving out)
+router.post('/:id/end', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { end_date = new Date().toISOString().split('T')[0] } = req.body;
+
+    // Verify tenancy exists and belongs to this landlord
+    const { data: tenancy, error: fetchError } = await req.supabase
+      .from('tenancies')
+      .select('id, status, tenancy_tenants(tenant:tenants(id, first_name, last_name))')
+      .eq('id', id)
+      .eq('landlord_id', req.landlord_id)
+      .single();
+
+    if (fetchError || !tenancy) {
+      return res.status(404).json({ error: 'Tenancy not found' });
+    }
+
+    if (tenancy.status === 'ended') {
+      return res.status(400).json({ error: 'Tenancy is already ended' });
+    }
+
+    // Update tenancy status to ended
+    const { data: updated, error: updateError } = await req.supabase
+      .from('tenancies')
+      .update({
+        status: 'ended',
+        end_date: end_date,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    // Get tenant name for response
+    const tenantName = tenancy.tenancy_tenants?.[0]?.tenant 
+      ? `${tenancy.tenancy_tenants[0].tenant.first_name} ${tenancy.tenancy_tenants[0].tenant.last_name}`
+      : 'Tenant';
+
+    res.json({
+      success: true,
+      message: `${tenantName}'s tenancy ended on ${end_date}`,
+      tenancy: updated
+    });
+  } catch (err) {
+    console.error('Error ending tenancy:', err);
+    res.status(500).json({ error: 'Failed to end tenancy' });
+  }
+});
+
 module.exports = router;

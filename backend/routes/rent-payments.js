@@ -197,9 +197,20 @@ router.post('/generate', async (req, res) => {
     if (tenancyError) throw tenancyError;
     
     // Filter tenancies: only include if start_date is in or before current month
+    // AND tenancy hasn't ended before start of current month
     const activeTenancies = (tenancies || []).filter(t => {
       const tenancyStart = new Date(t.start_date);
-      return tenancyStart <= endOfMonth;  // Tenancy must have started by end of this month
+      
+      // Skip if tenancy hasn't started yet
+      if (tenancyStart > endOfMonth) return false;
+      
+      // Skip if tenancy ended before the start of this month
+      if (t.end_date) {
+        const tenancyEnd = new Date(t.end_date);
+        if (tenancyEnd < startOfMonth) return false;
+      }
+      
+      return true;
     });
 
     // Get existing tenancy payments for this month

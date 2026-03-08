@@ -410,16 +410,17 @@ function PropertyDetail() {
           }
         });
         
-        // Filter to LATE payments only (past due date, not paid)
+        // Filter to PENDING and LATE payments (not yet paid)
         const pendingPayments = (paymentsRes.data || [])
-          .filter(p => p.status === 'late')
+          .filter(p => p.status === 'pending' || p.status === 'late')
           .map(payment => ({
             tenantName: payment.tenants?.map(t => `${t.first_name} ${t.last_name}`).join(', ') || 'Unknown',
             amount: payment.amount_due,
             dueDay: new Date(payment.due_date).getDate(),
             room: payment.tenancy?.room_number,
             tenancyId: payment.tenancy_id,
-            status: payment.status
+            status: payment.status,
+            isOverdue: payment.status === 'late'
           }))
           .sort((a, b) => a.dueDay - b.dueDay);
           
@@ -1207,17 +1208,21 @@ function PropertyDetail() {
             {upcomingPayments.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">✅</div>
-                <p>All rents paid for this month! 🎉</p>
+                <p>All rents recorded for this month 🎉</p>
+                <small style={{color: '#6C6D6F', marginTop: '8px', display: 'block'}}>
+                  All {property?.tenancies?.filter(t => t.status === 'active').length || 0} active tenants have paid or have payments recorded
+                </small>
               </div>
             ) : (
               <>
                 <div className="payment-list">
                   {upcomingPayments.map((payment, idx) => (
-                    <div key={idx} className={`payment-item ${payment.status}`}>
+                    <div key={idx} className={`payment-item ${payment.status} ${payment.isOverdue ? 'overdue' : ''}`}>
                       <div className="payment-info">
                         <span className="payment-tenant">{payment.tenantName}</span>
                         {payment.room && <span className="payment-room">Room {payment.room}</span>}
-                        {payment.status === 'late' && <span className="payment-late">⚠️ LATE</span>}
+                        {payment.isOverdue && <span className="payment-late">⚠️ OVERDUE</span>}
+                        {!payment.isOverdue && <span className="payment-pending">⏳ PENDING</span>}
                       </div>
                       <div className="payment-amount">
                         <span className="amount">£{payment.amount}</span>

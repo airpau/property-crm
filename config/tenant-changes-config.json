@@ -1,0 +1,55 @@
+{
+  " landlord_id": null,
+  "properties": {
+    "woodstock": {
+      "nameMatch": "woodstock"
+    },
+    "lockerley": {
+      "nameMatch": "2 mill farm"
+    }
+  },
+  "tenantChanges": {
+    "endTenancies": [
+      {
+        "propertyKey": "lockerley",
+        "roomNumber": "3",
+        "tenantFirstName": "Gav",
+        "tenantLastName": "Mytton",
+        "endDate": "2026-02-28"
+      },
+      {
+        "propertyKey": "woodstock",
+        "roomNumber": "5",
+        "tenantFirstName": "Jude",
+        "tenantLastName": "Dibia",
+        "endDate": "2026-02-28"
+      }
+    ],
+    "newTenancies": [
+      {
+        "propertyKey": "woodstock",
+        "roomNumber": "1",
+        "tenantFirstName": "Jude",
+        "tenantLastName": "Dibia",
+        "rentAmount": 800.00,
+        "startDate": "2026-03-01"
+      },
+      {
+        "propertyKey": "woodstock",
+        "roomNumber": "5",
+        "tenantFirstName": "Rikki",
+        "tenantLastName": "Newnham",
+        "rentAmount": 750.00,
+        "startDate": "2026-03-02"
+      },
+      {
+        "propertyKey": "woodstock",
+        "roomNumber": "4",
+        "tenantFirstName": "Jack",
+        "tenantLastName": "Harris",
+        "rentAmount": 650.00,
+        "startDate": "2026-03-22"
+      }
+    ]
+  }
+}

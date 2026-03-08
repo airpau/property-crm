@@ -1,26 +1,33 @@
-// This script uses environment variables for Supabase credentials
-// Run with: SUPABASE_URL=https://... SUPABASE_KEY=sb_secret_... node update-tenants.js
+// Config-driven tenant updates
+// Usage: CONFIG_FILE=./config/tenant-changes.json node update-tenants.js
 
+const fs = require('fs');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const CONFIG_FILE = process.env.CONFIG_FILE || './config/tenant-changes.json';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Error: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables required');
-  console.error('Run with: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node update-tenants.js');
   process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Load configuration
+function loadConfig() {
+  const configPath = path.resolve(CONFIG_FILE);
+  if (!fs.existsSync(configPath)) {
+    console.error(`Config file not found: ${configPath}`);
+    process.exit(1);
+  }
+  return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+}
+
 async function getLandlordId() {
-  const { data, error } = await supabase
-    .from('landlords')
-    .select('id')
-    .limit(1)
-    .single();
-  
+  const { data, error } = await supabase.from('landlords').select('id').limit(1).single();
   if (error) {
     console.error('Error getting landlord:', error);
     return null;
@@ -29,16 +36,17 @@ async function getLandlordId() {
 }
 
 async function listProperties(landlordId) {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('id, name')
-    .eq('landlord_id', landlordId);
-  
+  const { data, error } = await supabase.from('properties').select('id, name').eq('landlord_id', landlordId);
   if (error) {
     console.error('Error listing properties:', error);
     return [];
   }
   return data || [];
+}
+
+async function getPropertyId(properties, configProperty) {
+  const match = properties.find(p => p.name.toLowerCase().includes(configProperty.nameMatch.toLowerCase()));
+  return match?.id || null;
 }
 
 async function getTenantId(landlordId, firstName, lastName) {
@@ -57,7 +65,7 @@ async function getTenantId(landlordId, firstName, lastName) {
   return data.id;
 }
 
-async function endTenancy(landlordId, propertyId, roomNumber, tenantId) {
+async function endTenancy(landlordId, propertyId, roomNumber, tenantId, endDate) {
   const { data: tenancies, error: findError } = await supabase
     .from('tenancies')
     .select('id')
@@ -68,12 +76,12 @@ async function endTenancy(landlordId, propertyId, roomNumber, tenantId) {
   
   if (findError) {
     console.error('Error finding tenancies:', findError);
-    return;
+    return false;
   }
   
   if (!tenancies?.length) {
     console.log(`No active tenancy found for room ${roomNumber}`);
-    return;
+    return false;
   }
 
   const tenancyId = tenancies[0].id;
@@ -82,16 +90,17 @@ async function endTenancy(landlordId, propertyId, roomNumber, tenantId) {
     .from('tenancies')
     .update({ 
       status: 'ended', 
-      end_date: '2026-02-28',
+      end_date: endDate,
       updated_at: new Date().toISOString()
     })
     .eq('id', tenancyId);
 
   if (updateError) {
     console.error(`Error ending tenancy:`, updateError);
-  } else {
-    console.log(`✅ Ended tenancy for room ${roomNumber}`);
+    return false;
   }
+  console.log(`✅ Ended tenancy for room ${roomNumber} on ${endDate}`);
+  return true;
 }
 
 async function createTenant(landlordId, firstName, lastName) {
@@ -154,13 +163,16 @@ async function linkTenantToTenancy(tenancyId, tenantId) {
   
   if (error) {
     console.error(`Error linking tenant to tenancy:`, error);
-  } else {
-    console.log(`✅ Linked tenant to tenancy`);
+    return false;
   }
+  console.log(`✅ Linked tenant to tenancy`);
+  return true;
 }
 
 async function main() {
   console.log('Starting tenant updates...\n');
+  
+  const config = loadConfig();
   
   const landlordId = await getLandlordId();
   if (!landlordId) {
@@ -169,73 +181,77 @@ async function main() {
   }
   console.log(`Landlord ID: ${landlordId}\n`);
 
-  // List all properties first
-  console.log('=== Available Properties ===');
+  // Map property keys to IDs
+  console.log('=== Resolving Properties ===');
   const allProperties = await listProperties(landlordId);
-  allProperties.forEach(p => console.log(`  - ${p.name} (${p.id})`));
+  const propertyMap = {};
+  
+  for (const [key, propConfig] of Object.entries(config.properties)) {
+    const id = await getPropertyId(allProperties, propConfig);
+    propertyMap[key] = id;
+    console.log(`  ${key}: ${id ? '✅ ' + id : '❌ NOT FOUND'}`);
+  }
   console.log('');
 
-  // Get properties by exact match or partial
-  // "2 Mill Farm House" is the Lockerley property
-  const lockerley = allProperties.find(p => p.name.toLowerCase().includes('2 mill farm'));
-  const woodstock = allProperties.find(p => p.name.toLowerCase().includes('woodstock'));
-  
-  console.log('Matched Properties:');
-  console.log(`  Lockerley: ${lockerley?.id || 'NOT FOUND'}`);
-  console.log(`  Woodstock: ${woodstock?.id || 'NOT FOUND'}\n`);
-
-  if (!woodstock) {
-    console.error('Woodstock property not found');
-    return;
-  }
-
-  // Note: Lockerley not found in database - property may need to be created first
-  if (!lockerley) {
-    console.log('⚠️ Lockerley property not found - skipping Gav Mytton update\n');
-  } else {
-    // End Gav Mytton's tenancy at Lockerley
-    console.log('=== Lockerley Changes ===');
-    const gavId = await getTenantId(landlordId, 'Gav', 'Mytton');
-    if (gavId) {
-      await endTenancy(landlordId, lockerley.id, 'Room 5', gavId);
+  // Process tenancy endings
+  if (config.tenantChanges?.endTenancies?.length > 0) {
+    console.log('=== Ending Tenancies ===');
+    for (const endConfig of config.tenantChanges.endTenancies) {
+      const propertyId = propertyMap[endConfig.propertyKey];
+      if (!propertyId) {
+        console.log(`❌ Property ${endConfig.propertyKey} not found, skipping`);
+        continue;
+      }
+      
+      const tenantId = await getTenantId(landlordId, endConfig.tenantFirstName, endConfig.tenantLastName);
+      if (!tenantId) {
+        console.log(`❌ Tenant ${endConfig.tenantFirstName} ${endConfig.tenantLastName} not found`);
+        continue;
+      }
+      
+      await endTenancy(landlordId, propertyId, endConfig.roomNumber, tenantId, endConfig.endDate);
     }
     console.log('');
   }
 
-  // 2. Woodstock Changes
-  console.log('=== Woodstock Changes ===');
-  
-  // End Jude Dibia's Room 5 tenancy
-  const judeId = await getTenantId(landlordId, 'Jude', 'Dibia');
-  if (judeId) {
-    await endTenancy(landlordId, woodstock.id, 'Room 5', judeId);
-    
-    // Create Jude's Room 1 tenancy
-    const judeTenancyId = await createTenancy(landlordId, woodstock.id, 'Room 1', 800.00, '2026-03-01');
-    if (judeTenancyId) {
-      await linkTenantToTenancy(judeTenancyId, judeId);
+  // Process new tenancies
+  if (config.tenantChanges?.newTenancies?.length > 0) {
+    console.log('=== Creating New Tenancies ===');
+    for (const newConfig of config.tenantChanges.newTenancies) {
+      const propertyId = propertyMap[newConfig.propertyKey];
+      if (!propertyId) {
+        console.log(`❌ Property ${newConfig.propertyKey} not found, skipping`);
+        continue;
+      }
+      
+      // Try to find existing tenant first
+      let tenantId = await getTenantId(landlordId, newConfig.tenantFirstName, newConfig.tenantLastName);
+      
+      // Create if not exists
+      if (!tenantId) {
+        tenantId = await createTenant(landlordId, newConfig.tenantFirstName, newConfig.tenantLastName);
+      } else {
+        console.log(`ℹ️ Using existing tenant: ${newConfig.tenantFirstName} ${newConfig.tenantLastName}`);
+      }
+      
+      if (tenantId) {
+        const tenancyId = await createTenancy(
+          landlordId, 
+          propertyId, 
+          newConfig.roomNumber, 
+          newConfig.rentAmount, 
+          newConfig.startDate
+        );
+        
+        if (tenancyId) {
+          await linkTenantToTenancy(tenancyId, tenantId);
+        }
+      }
     }
+    console.log('');
   }
   
-  // Create Rikki Newnham tenant and tenancy
-  const rikkiId = await createTenant(landlordId, 'Rikki', 'Newnham');
-  if (rikkiId) {
-    const rikkiTenancyId = await createTenancy(landlordId, woodstock.id, 'Room 5', 750.00, '2026-03-02');
-    if (rikkiTenancyId) {
-      await linkTenantToTenancy(rikkiTenancyId, rikkiId);
-    }
-  }
-  
-  // Create Jack Harris tenant and tenancy
-  const jackId = await createTenant(landlordId, 'Jack', 'Harris');
-  if (jackId) {
-    const jackTenancyId = await createTenancy(landlordId, woodstock.id, 'Room 4', 650.00, '2026-03-22');
-    if (jackTenancyId) {
-      await linkTenantToTenancy(jackTenancyId, jackId);
-    }
-  }
-  
-  console.log('\n✅ All tenant changes completed!');
+  console.log('✅ All tenant changes completed!');
 }
 
 main().catch(console.error);

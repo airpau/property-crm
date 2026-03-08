@@ -1023,7 +1023,7 @@ function PropertyDetail() {
                     <span className="summary-hint">18% of net after cleaning</span>
                   </div>
                   {/* Cleaning Fee (shown separately) */}
-                  <div className="summary-card cleaning-fee" style={{ borderLeft: '3px solid '#06b6d4', background: 'linear-gradient(135deg, #f8fafc, #cffafe)'}}>
+                  <div className="summary-card cleaning-fee" style={{ borderLeft: "3px solid #06b6d4", background: "linear-gradient(135deg, #f8fafc, #cffafe)"}}>
                     <span className="summary-label">Cleaning Fee</span>
                     <span className="summary-value" style={{ color: '#0e7490'}}>
                       {saBookings.some(b => b.currency === 'USD') ? (
@@ -1038,7 +1038,7 @@ function PropertyDetail() {
                     <span className="summary-hint">Per-checkout cleaning cost</span>
                   </div>
                   {/* Take Home Summary */}
-                  <div className="summary-card take-home" style={{ borderLeft: '3px solid '#059669', background: 'linear-gradient(135deg, #f8fafc, #d1fae5)'}}>
+                  <div className="summary-card take-home" style={{ borderLeft: "3px solid #059669", background: "linear-gradient(135deg, #f8fafc, #d1fae5)"}}>
                     <span className="summary-label">🎯 Your Take-Home</span>
                     <span className="summary-value" style={{ color: '#047857', fontWeight: '700', fontSize: '1.25em'}}>
                       {saBookings.some(b => b.currency === 'USD') ? (

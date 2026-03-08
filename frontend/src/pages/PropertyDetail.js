@@ -1499,7 +1499,7 @@ function PropertyDetail() {
 
           {/* Expense Summary */}
           <div className="expense-summary">
-            <h4>Expense Breakdown</h4>
+            <h4>{new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' })} Expenses</h4>
             <div className="summary-grid">
               <div className="summary-item">
                 <div className="label">Recurring</div>
@@ -1536,7 +1536,10 @@ function PropertyDetail() {
                       <div className="expense-description">{expense.description}</div>
                     )}
                     <div className="expense-meta">
-                      {new Date(expense.expense_date).toLocaleDateString('en-GB')} • {expense.frequency}
+                      {expense.frequency === 'one-off' 
+                        ? `${new Date(expense.expense_date).toLocaleDateString('en-GB')} • One-off`
+                        : `Monthly recurring (from ${new Date(expense.expense_date).toLocaleDateString('en-GB')})`
+                      }
                       {expense.is_tax_deductible && ' • Tax deductible'}
                     </div>
                   </div>

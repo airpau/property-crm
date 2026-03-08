@@ -176,7 +176,8 @@ async function main() {
   console.log('');
 
   // Get properties by exact match or partial
-  const lockerley = allProperties.find(p => p.name.toLowerCase().includes('lockerley'));
+  // "2 Mill Farm House" is the Lockerley property
+  const lockerley = allProperties.find(p => p.name.toLowerCase().includes('2 mill farm'));
   const woodstock = allProperties.find(p => p.name.toLowerCase().includes('woodstock'));
   
   console.log('Matched Properties:');

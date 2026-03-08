@@ -10,6 +10,7 @@ router.get('/income', async (req, res) => {
       .from('rent_payments')
       .select(`
         id,
+        tenancy_id,
         amount_due,
         amount_paid,
         paid_date,
@@ -38,22 +39,25 @@ router.get('/income', async (req, res) => {
 
     // Get tenant names for tenancy-based payments
     const paymentsWithTenants = await Promise.all((payments || []).map(async (p) => {
-      let tenantName = 'SA Booking';
+      let tenantName = 'Unknown';
       
-      // If it's a tenancy payment (not SA booking)
-      if (p.tenancy) {
-        const { data: tenants } = await req.supabase
+      if (p.sa_booking?.guest_name) {
+        // SA booking payment
+        tenantName = p.sa_booking.guest_name;
+      } else if (p.tenancy) {
+        // Tenancy payment - get tenant name
+        const { data: tenancyTenants } = await req.supabase
           .from('tenancy_tenants')
           .select('tenant:tenants(first_name, last_name)')
           .eq('tenancy_id', p.tenancy_id)
           .eq('is_primary', true)
-          .single();
+          .maybeSingle();
         
-        if (tenants?.tenant) {
-          tenantName = `${tenants.tenant.first_name} ${tenants.tenant.last_name}`;
+        if (tenancyTenants?.tenant) {
+          tenantName = `${tenancyTenants.tenant.first_name} ${tenancyTenants.tenant.last_name}`;
+        } else {
+          tenantName = 'Tenant (linked)';
         }
-      } else if (p.sa_booking?.guest_name) {
-        tenantName = p.sa_booking.guest_name;
       }
 
       return {
